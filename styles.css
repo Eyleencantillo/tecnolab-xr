@@ -18,3 +18,12 @@ footer{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-cont
 
 /* La manipulación de los modelos se realiza con seguimiento de manos. */
 .control-panel .control-group:has(#rotateLeft){display:none}
+
+/* Modo AR: cámara real detrás del escenario 3D transparente. */
+#sceneWrap.camera-ar-active{background:#000}
+#sceneWrap .ar-camera-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000}
+#sceneWrap .ar-camera-video.hidden{display:none!important}
+#sceneWrap.camera-ar-active a-scene{z-index:2!important;background:transparent!important}
+#sceneWrap.camera-ar-active a-scene canvas{background:transparent!important}
+#sceneWrap.camera-ar-active .scene-hint{z-index:5}
+#sceneWrap.camera-ar-active .hand-overlay{z-index:6}
