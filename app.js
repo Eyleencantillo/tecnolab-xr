@@ -12,7 +12,7 @@ const modules=[
 {id:"datos",name:"Almacenamiento y procesamiento",short:"Explora cómo se guardan y procesan los datos.",icon:"▤",tag:"DATOS",description:"Conoce dispositivos que almacenan información y componentes que la procesan.",objective:"Diferenciar almacenamiento y procesamiento mediante ejemplos tecnológicos.",tip:"Selecciona cada componente para consultar su función.",items:[["Procesador","Ejecuta instrucciones y operaciones.","▣"],["Memoria","Conserva datos temporalmente para el trabajo del sistema.","▥"],["Almacenamiento","Conserva archivos incluso cuando el equipo se apaga.","▤"],["Servidor","Ofrece recursos o servicios a otros dispositivos.","▦"]],actions:["Simular transferencia","Guardar archivo demo","Limpiar transferencia"],challenge:"Distingue qué componente procesa información y cuál la conserva."},
 {id:"evolucion",name:"Evolución tecnológica",short:"Recorre hitos de la historia de la tecnología.",icon:"◷",tag:"HISTORIA",description:"Explora cambios en dispositivos y herramientas a través del tiempo.",objective:"Reconocer que la tecnología evoluciona para responder a necesidades humanas.",tip:"Selecciona cada objeto y compara sus características.",items:[["Telégrafo","Permitió transmitir mensajes a distancia mediante señales.","⌁"],["Teléfono","Facilitó la comunicación oral a distancia.","☎"],["Computador","Automatiza el procesamiento de información.","▣"],["Dispositivo móvil","Integra comunicación y múltiples herramientas digitales.","▯"]],actions:["Ver línea de tiempo","Comparar dispositivos","Explorar galería"],challenge:"Ordena los hitos tecnológicos y explica un cambio importante en la comunicación."}
 ];
-const $=s=>document.querySelector(s);let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null;
+const $=s=>document.querySelector(s);let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null,arSession=null,arOriginalBackground=null;
 const world=$("#world");
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600)}
 function showModal(title,body,eyebrow="TECNOLAB XR"){$("#modalTitle").textContent=title;$("#modalBody").innerHTML=body;$("#modalEyebrow").textContent=eyebrow;$("#modal").classList.remove("hidden")}
@@ -257,5 +257,38 @@ function stopHands(){
  const video=$("#cameraVideo");if(video)video.srcObject=null;
  $("#handOverlay").classList.add("hidden");document.querySelectorAll("#handCursor, #handCursor2").forEach(e=>e.remove());document.querySelectorAll("#xrScene > a-sphere").forEach(e=>{if(e.getAttribute("radius")===".075")e.remove()});$("#handBtn").classList.remove("active");$("#handBtn").textContent="✋ Activar cámara y manos";
 }
-async function checkAR(){if(!navigator.xr){toast("Este navegador no ofrece WebXR AR. Puedes continuar en el escenario 3D.");return}try{const ok=await navigator.xr.isSessionSupported("immersive-ar");toast(ok?"Este dispositivo admite WebXR AR. La sesión inmersiva depende del navegador.":"WebXR AR no está disponible en este dispositivo.");}catch(e){toast("No fue posible comprobar WebXR en este navegador.")}}
+async function checkAR(){
+ const btn=$("#arBtn"),scene=$("#xrScene");
+ if(arSession){try{await arSession.end()}catch(e){console.warn("No se pudo cerrar AR",e)}return}
+ if(!window.isSecureContext){toast("AR necesita una conexión segura HTTPS. Abre la versión publicada en GitHub Pages.");return}
+ if(!navigator.xr){toast("Este navegador no tiene WebXR. Prueba Chrome en un móvil Android compatible con ARCore.");return}
+ try{
+  btn.disabled=true;btn.textContent="Preparando AR…";
+  const session=await navigator.xr.requestSession("immersive-ar",{optionalFeatures:["local-floor","hit-test","dom-overlay"],domOverlay:{root:document.body}});
+  const renderer=scene.renderer;
+  if(!renderer)throw new Error("El motor 3D aún no está listo. Entra al laboratorio e inténtalo otra vez.");
+  arOriginalBackground=scene.getAttribute("background")||{color:"#08172c"};
+  scene.removeAttribute("background");
+  renderer.setClearColor(0x000000,0);
+  renderer.setClearAlpha(0);
+  renderer.xr.enabled=true;
+  renderer.xr.setReferenceSpaceType("local");
+  await renderer.xr.setSession(session);
+  arSession=session;
+  btn.disabled=false;btn.classList.add("active");btn.textContent="Salir de AR";
+  $("#sceneHint").textContent="REALIDAD AUMENTADA ACTIVA · mueve el dispositivo para explorar el espacio";
+  toast("Realidad aumentada activada. Apunta la cámara hacia tu entorno.");
+  session.addEventListener("end",()=>{
+   arSession=null;
+   try{renderer.xr.enabled=false;renderer.setClearColor(0x08172c,1);scene.setAttribute("background",arOriginalBackground||"color: #08172c")}catch(e){console.warn(e)}
+   btn.classList.remove("active");btn.disabled=false;btn.textContent="◉ Modo AR";
+   $("#sceneHint").textContent="Tus manos físicas interactúan directamente con los modelos virtuales: apunta, sujeta, mueve, gira y amplía";
+  },{once:true});
+ }catch(e){
+  console.error("WebXR AR:",e);
+  btn.disabled=false;btn.classList.remove("active");btn.textContent="◉ Modo AR";
+  let msg=e.name==="NotAllowedError"?"No se concedió el permiso o se canceló la sesión AR.":e.name==="NotSupportedError"?"Este dispositivo o navegador no admite AR inmersiva. Usa Chrome en Android compatible con ARCore.":e.message||"No fue posible iniciar la realidad aumentada.";
+  toast(msg);
+ }
+}
 $("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Girar y ampliar:</b> utiliza los controles del panel.</li><li><b>Manos físicas:</b> apunta a un modelo virtual; haz pinza para sujetarlo y arrastrarlo, abre la mano para girarlo y usa ambas manos para ampliar o reducir.</li><li><b>Exploración:</b> usa las herramientas del laboratorio para activar simulaciones.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
