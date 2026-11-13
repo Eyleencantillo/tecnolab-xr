@@ -70,7 +70,8 @@
                 <a-entity light="type: ambient; intensity: 1.15"></a-entity>
                 <a-entity light="type: directional; intensity: 1.8" position="-3 6 4"></a-entity>
               </a-scene>
-              <div id="sceneHint" class="scene-hint">Tus manos físicas interactúan directamente con los modelos virtuales: apunta, sujeta, mueve, gira y amplía</div>
+              <div id="sceneHint" class="scene-hint">Selecciona un modelo con clic o toque para manipularlo con tus manos.</div>
+              <div class="scene-gesture-guide" aria-label="Instrucciones para mover las manos"><b>GUÍA DE GESTOS</b><span>✊ <strong>Puño cerrado:</strong> mover el modelo.</span><span>🖐️ <strong>Mano abierta:</strong> girar a izquierda o derecha.</span><span>🤏 <strong>Junta pulgar e índice:</strong> acercar.</span><span>👌 <strong>Separa pulgar e índice:</strong> alejar; mantén los otros dedos doblados.</span><small>Primero selecciona un objeto. Mantén la mano completa visible frente a la cámara.</small></div>
               <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
             </div>
             <div class="scene-footer"><span>INTERACCIÓN PRINCIPAL: GESTOS CON LAS MANOS</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
