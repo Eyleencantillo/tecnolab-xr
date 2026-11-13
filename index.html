@@ -56,7 +56,7 @@
           <div class="scene-panel">
             <div class="scene-toolbar">
               <span class="scene-label"><i></i> ESCENARIO 3D</span>
-              <div class="scene-tools"><button id="handBtn" class="tool-btn">✋ Activar manos</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
+              <div class="scene-tools"><button id="handBtn" class="tool-btn">✋ Activar cámara y manos</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
             </div>
             <div id="sceneWrap">
               <a-scene id="xrScene" embedded renderer="antialias: true; colorManagement: true" vr-mode-ui="enabled: false" background="color: #08172c">
@@ -70,10 +70,10 @@
                 <a-entity light="type: ambient; intensity: 1.15"></a-entity>
                 <a-entity light="type: directional; intensity: 1.8" position="-3 6 4"></a-entity>
               </a-scene>
-              <div id="sceneHint" class="scene-hint">Selecciona un objeto para explorarlo · Arrastra para girar la vista</div>
+              <div id="sceneHint" class="scene-hint">Activa la cámara y usa tus manos para seleccionar, mover, girar y ampliar objetos 3D</div>
               <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
             </div>
-            <div class="scene-footer"><span>CONTROLES: mouse / táctil / gestos</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
+            <div class="scene-footer"><span>INTERACCIÓN PRINCIPAL: GESTOS CON LAS MANOS</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
           </div>
           <aside class="control-panel">
             <div class="panel-title"><span>⌁</span><div><b>Panel de exploración</b><small>Interactúa con el escenario</small></div></div>
@@ -81,7 +81,7 @@
             <p class="panel-description" id="selectedDescription">Haz clic o toca un objeto del escenario para conocerlo y manipularlo.</p>
             <div class="control-group"><label>MANIPULACIÓN</label><div class="control-row"><button id="rotateLeft">↶ Girar</button><button id="rotateRight">↷ Girar</button></div><div class="control-row"><button id="scaleDown">− Reducir</button><button id="scaleUp">＋ Ampliar</button></div><button class="wide-btn" id="moveCenter">⌖ Centrar objeto</button></div>
             <div class="control-group"><label>HERRAMIENTAS DEL LABORATORIO</label><div id="actionButtons" class="action-buttons"></div></div>
-            <div class="tip-box"><span>✦</span><div><b>Consejo de exploración</b><p id="tipText">Prueba seleccionar los componentes y cambiar su tamaño para observar sus detalles.</p></div></div>
+            <div class="gesture-guide"><b>✋ CONTROLA CON TUS MANOS</b><span>🤏 Pinza: seleccionar y mover</span><span>🖐️ Mano abierta: girar</span><span>↕️ Gesto vertical: subir o bajar</span><span>🙌 Dos manos: ampliar o reducir</span></div><div class="tip-box"><span>✦</span><div><b>Consejo de exploración</b><p id="tipText">Activa la cámara, selecciona una pieza con pinza y explora sus detalles con gestos.</p></div></div>
           </aside>
         </div>
         <div class="learning-strip"><div><span class="strip-icon">◎</span><div><b>Objetivo de aprendizaje</b><p id="objectiveText"></p></div></div><div class="progress-wrap"><span>PROGRESO DEL LABORATORIO</span><div class="progress-track"><i id="progressBar"></i></div></div></div>
