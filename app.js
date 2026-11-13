@@ -21,8 +21,68 @@ function buildCards(){$("#moduleGrid").innerHTML=modules.map((m,i)=>`<button cla
 function goHome(){$("#labView").classList.remove("active");$("#homeView").classList.add("active");stopHands();current=null;window.scrollTo({top:0,behavior:"smooth"})}
 function openLab(id){current=modules.find(m=>m.id===id);if(!current)return;$("#homeView").classList.remove("active");$("#labView").classList.add("active");$("#labTitle").textContent=current.name;$("#labDescription").textContent=current.description;$("#labEyebrow").textContent="LABORATORIO "+String(modules.indexOf(current)+1).padStart(2,"0");$("#objectiveText").textContent=current.objective;$("#tipText").textContent=current.tip;$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedIcon").textContent=current.icon;$("#selectedLabel").textContent="Ningún objeto seleccionado";selectedEl=null;buildScene();buildActions();window.scrollTo({top:0,behavior:"smooth"})}
 function el(tag,attrs={},parent=world){const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
-function buildScene(){world.innerHTML="";el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"10",height:"8",color:"#0b2540",material:"roughness: 1"});el("a-grid",{position:"0 .015 0",rotation:"-90 0 0",width:"10",height:"8",color:"#245274",opacity:".45"});current.items.forEach((item,i)=>createObject(item,i));}
-function createObject(item,i){const x=(i-(current.items.length-1)/2)*1.65;const g=el("a-entity",{position:`${x} 1.1 0`,class:"interactive","data-name":item[0],"data-description":item[1]});const hue=["#1c82b8","#3476c9","#278e8b","#765fc2","#bd7c42","#368cae"][i%6];el("a-box",{width:".92",height:".72",depth:".62",radius:".08",color:hue,metalness:".25",roughness:".42"},g);el("a-torus",{radius:".58",radiusTubular:".012",color:"#51e5ff",rotation:"90 0 0",position:"0 -.42 0",opacity:".7"},g);el("a-text",{value:item[0],align:"center",color:"#e8f7ff",width:"3.2",position:"0 -.62 0",side:"double"},g);g.addEventListener("click",()=>selectObject(g,item));g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.06 1.06 1.06; dur: 180")});g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")})}
+function buildScene(){
+ world.innerHTML="";
+ el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"10",height:"8",color:"#0b2540",material:"roughness: 1"});
+ el("a-grid",{position:"0 .018 0",rotation:"-90 0 0",width:"10",height:"8",color:"#245274",opacity:".45"});
+ // Dos avatares guía acompañan la exploración en el laboratorio.
+ addAvatar(-3.8, "Guía de laboratorio", "#3476c9");
+ addAvatar(3.8, "Explorador XR", "#278e8b");
+ current.items.forEach((item,i)=>createObject(item,i));
+}
+function addAvatar(x,label,shirt){
+ const avatar=el("a-entity",{position:`${x} 0 .9`,class:"lab-avatar"});
+ el("a-cylinder",{position:"0 .82 0",radius:".22",height:".55",color:shirt},avatar);
+ el("a-sphere",{position:"0 1.28 0",radius:".19",color:"#d9a47c"},avatar);
+ el("a-sphere",{position:"-.07 1.31 .16",radius:".025",color:"#10243d"},avatar);
+ el("a-sphere",{position:".07 1.31 .16",radius:".025",color:"#10243d"},avatar);
+ el("a-cylinder",{position:"-.28 .85 0",radius:".07",height:".48",rotation:"0 0 18",color:"#d9a47c"},avatar);
+ el("a-cylinder",{position:".28 .85 0",radius:".07",height:".48",rotation:"0 0 -18",color:"#d9a47c"},avatar);
+ el("a-cylinder",{position:"-.11 .28 0",radius:".075",height:".48",color:"#263d59"},avatar);
+ el("a-cylinder",{position:".11 .28 0",radius:".075",height:".48",color:"#263d59"},avatar);
+ el("a-text",{value:label,align:"center",color:"#bfeeff",width:"2.8",position:"0 1.58 0"},avatar);
+}
+function createObject(item,i){
+ const x=(i-(current.items.length-1)/2)*1.45;
+ const g=el("a-entity",{position:`${x} 1.05 -.35`,class:"interactive", "data-name":item[0],"data-description":item[1]});
+ const hue=["#1c82b8","#3476c9","#278e8b","#765fc2","#bd7c42","#368cae"][i%6];
+ const part=(tag,attrs)=>el(tag,attrs,g);
+ // Modelos 3D distintos según el contenido del laboratorio.
+ if(current.id==="hardware"||current.id==="datos"){
+   if(i===0){part("a-box",{width:"1.05",height:".12",depth:".78",color:"#176b55"});for(let n=0;n<4;n++)part("a-box",{position:`${-.36+n*.24} .12 0`,width:".12",height:".12",depth:".48",color:"#d5b45c"});}
+   else if(i===1){part("a-box",{width:".55",height:".16",depth:".55",color:"#252f43"});part("a-box",{position:"0 .1 0",width:".35",height:".035",depth:".35",color:"#51e5ff"});}
+   else if(i===2){part("a-box",{width:".9",height:".12",depth:".22",color:"#1c3c70"});for(let n=0;n<8;n++)part("a-box",{position:`${-.36+n*.1} .09 0`,width:".035",height:".035",depth:".25",color:"#d9c16b"});}
+   else if(i===3){part("a-box",{width:".75",height:".16",depth:".48",color:"#48566c"});part("a-cylinder",{position:"0 .11 0",radius:".12",height:".025",rotation:"90 0 0",color:"#51e5ff"});}
+   else if(i===4){part("a-box",{width:".9",height:".18",depth:".48",color:"#202a3a"});part("a-cylinder",{position:"-.25 .12 0",radius:".18",height:".07",color:"#51e5ff"});part("a-cylinder",{position:".25 .12 0",radius:".18",height:".07",color:"#51e5ff"});}
+   else{part("a-box",{width:".72",height:".55",depth:".5",color:"#39485e"});part("a-box",{position:"0 .29 .02",width:".34",height:".035",depth:".03",color:"#55e6bd"});}
+ }else if(current.id==="redes"){
+   part("a-box",{width:".9",height:".35",depth:".55",color:hue});for(let n=0;n<5;n++)part("a-cylinder",{position:`${-.3+n*.15} -.19 .2`,radius:".035",height:".04",rotation:"90 0 0",color:"#55e6bd"});
+   part("a-torus",{position:"0 .28 0",radius:".2",radiusTubular:".018",color:"#51e5ff"});
+ }else if(current.id==="robotica"){
+   part("a-box",{width:".5",height:".42",depth:".35",color:hue});part("a-sphere",{position:"0 .34 .02",radius:".24",color:"#b8cce0"});part("a-cylinder",{position:"0 -.35 0",radius:".09",height:".35",color:"#51e5ff"});part("a-box",{position:".32 -.02 0",width:".16",height:".55",depth:".15",color:"#bd7c42"});
+ }else if(current.id==="electronica"){
+   if(i===0)part("a-box",{width:".65",height:".38",depth:".35",color:"#3273b7"});
+   else if(i===1)part("a-torus",{radius:".26",radiusTubular:".045",color:"#d6b45c"});
+   else if(i===2){part("a-box",{width:".4",height:".12",depth:".28",color:"#303d4d"});part("a-cylinder",{position:"0 .13 0",radius:".08",height:".2",color:"#55e6bd"});}
+   else{part("a-sphere",{radius:".2",color:"#ffe36a",material:"emissive: #9c7a20; emissiveIntensity: .4"});part("a-cylinder",{position:"0 -.22 0",radius:".13",height:".12",color:"#9aa8b8"});}
+ }else if(current.id==="sistemas"||current.id==="programacion"||current.id==="ciberseguridad"){
+   part("a-box",{width:".8",height:".58",depth:".09",color:"#253c59"});part("a-plane",{position:"0 0 .06",width:".68",height:".44",color:hue});for(let n=0;n<3;n++)part("a-box",{position:`0 ${.12-n*.12} .075`,width:".42",height:".025",depth:".015",color:"#d8f4ff"});
+   part("a-cylinder",{position:"0 -.42 0",radius:".06",height:".28",color:"#8399b0"});part("a-box",{position:"0 -.56 0",width:".55",height:".07",depth:".25",color:"#52677e"});
+ }else if(current.id==="impresion"){
+   part("a-box",{width:".85",height:".75",depth:".12",color:"#54667b",material:"wireframe: true"});part("a-box",{position:"0 -.25 0",width:".62",height:".06",depth:".48",color:"#278e8b"});part("a-cone",{position:"0 .05 0",radiusBottom:".15",radiusTop:".04",height:".28",color:"#bd7c42"});
+ }else if(current.id==="ia"){
+   part("a-sphere",{radius:".26",color:hue});for(let n=0;n<5;n++){const angle=n*Math.PI*2/5;part("a-sphere",{position:`${Math.cos(angle)*.48} ${Math.sin(angle)*.32} 0`,radius:".09",color:"#51e5ff"});part("a-cylinder",{position:`${Math.cos(angle)*.24} ${Math.sin(angle)*.16} 0`,height:".5",radius:".012",rotation:`0 0 ${angle*180/Math.PI}`,color:"#51e5ff"});}
+ }else if(current.id==="arvr"){
+   part("a-box",{width:".55",height:".3",depth:".2",color:"#263e59"});part("a-sphere",{position:"-.16 0 .13",radius:".12",color:"#51e5ff"});part("a-sphere",{position:".16 0 .13",radius:".12",color:"#51e5ff"});part("a-torus",{position:"0 .23 0",radius:".35",radiusTubular:".025",color:"#55e6bd"});
+ }else{
+   part("a-box",{width:".72",height:".55",depth:".45",color:hue});part("a-cylinder",{position:"0 .34 0",radius:".22",height:".08",color:"#51e5ff"});
+ }
+ part("a-text",{value:item[0],align:"center",color:"#e8f7ff",width:"3.1",position:"0 -.66 0",side:"double"});
+ part("a-torus",{radius:".58",radiusTubular:".012",color:"#51e5ff",rotation:"90 0 0",position:"0 -.43 0",opacity:".7"});
+ g.addEventListener("click",()=>selectObject(g,item));
+ g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.06 1.06 1.06; dur: 180")});
+ g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")});
+}
 function selectObject(g,item){if(selectedEl){selectedEl.setAttribute("scale","1 1 1");selectedEl.querySelector("a-torus")?.setAttribute("color","#51e5ff")}selectedEl=g;g.setAttribute("scale","1.12 1.12 1.12");g.querySelector("a-torus")?.setAttribute("color","#ffffff");$("#selectedName").textContent=item[0];$("#selectedDescription").textContent=item[1];$("#selectedIcon").textContent=item[2];$("#selectedLabel").textContent="Seleccionado: "+item[0];$("#progressBar").style.width="15%"}
 function buildActions(){const box=$("#actionButtons");box.innerHTML="";current.actions.forEach((a,i)=>{const b=document.createElement("button");b.textContent=a;b.addEventListener("click",()=>runAction(i));box.appendChild(b)})}
 function runAction(i){const id=current.id;if(id==="hardware"&&i===0){world.querySelectorAll("a-torus").forEach((e,j)=>e.setAttribute("color",j<3?"#55e6bd":"#51e5ff"));toast("Conexiones principales resaltadas.");}
@@ -45,7 +105,54 @@ function animatePackets(){for(let i=0;i<5;i++){const p=el("a-sphere",{position:"
 function addProgramBlock(label){const b=el("a-box",{position:`${-1.7+Math.random()*3.4} 1.8 -1`,width:".8",height:".25",depth:".12",color:"#397cbe"});b.classList.add("program-block");el("a-text",{value:label,align:"center",color:"#ffffff",width:"2",position:"0 0 .08"},b);toast("Bloque agregado: "+label)}
 function resetScene(){if(!current)return;buildScene();$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedLabel").textContent="Ningún objeto seleccionado";selectedEl=null;toast("Escenario reiniciado.")}
 function manipulate(type){if(!selectedEl){toast("Primero selecciona un objeto del escenario.");return}const rot=selectedEl.getAttribute("rotation"),sc=selectedEl.getAttribute("scale");if(type==="left")selectedEl.setAttribute("rotation",`${rot.x} ${rot.y-20} ${rot.z}`);if(type==="right")selectedEl.setAttribute("rotation",`${rot.x} ${rot.y+20} ${rot.z}`);if(type==="up")selectedEl.setAttribute("scale",`${Math.min(sc.x*1.18,2.8)} ${Math.min(sc.y*1.18,2.8)} ${Math.min(sc.z*1.18,2.8)}`);if(type==="down")selectedEl.setAttribute("scale",`${Math.max(sc.x/1.18,.35)} ${Math.max(sc.y/1.18,.35)} ${Math.max(sc.z/1.18,.35)}`);if(type==="center")selectedEl.setAttribute("position","0 1.1 0")}
-async function startHands(){if(handStream){stopHands();return}const video=$("#cameraVideo");$("#handOverlay").classList.remove("hidden");$("#handStatus").textContent="Solicitando cámara...";try{handStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});video.srcObject=handStream;await video.play();const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");const fs=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");handTask=await vision.HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numHands:2});const canvas=$("#handCanvas"),ctx=canvas.getContext("2d");let last=0;handLoop=setInterval(()=>{if(video.readyState<2||!handTask)return;const now=performance.now();if(now-last<65)return;last=now;const result=handTask.detectForVideo(video,now);canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.clearRect(0,0,canvas.width,canvas.height);if(result.landmarks?.length){const lm=result.landmarks[0];lm.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,4,0,Math.PI*2);ctx.fillStyle="#51e5ff";ctx.fill()});const a=lm[4],b=lm[8],pinch=Math.hypot(a.x-b.x,a.y-b.y)<.055;if(pinch){$("#handStatus").textContent="Pinza detectada · mueve la mano";const target=world.querySelector(".interactive");if(target){target.setAttribute("position",`${(.5-(a.x+b.x)/2)*4.5} ${Math.max(.5,Math.min(2.8,(1-(a.y+b.y)/2)*2))} 0`);if(!selectedEl)selectObject(target,[target.dataset.name||"Objeto",target.dataset.description||"Elemento 3D","✋"])}}else $("#handStatus").textContent="Mano detectada · haz pinza para mover";if(result.landmarks.length>1){const c=result.landmarks[0][9],d=result.landmarks[1][9],dist=Math.hypot(c.x-d.x,c.y-d.y);if(scaleStart!==null&&selectedEl){const s=Math.max(.45,Math.min(2.5,1+(dist-scaleStart)*2));selectedEl.setAttribute("scale",`${s} ${s} ${s}`)}scaleStart=dist}else scaleStart=null}else $("#handStatus").textContent="Muestra una o ambas manos"},45);$("#handBtn").classList.add("active");toast("Reconocimiento de manos activado.");}catch(err){console.error(err);stopHands();toast("No se pudo iniciar la cámara. Verifica permisos, HTTPS y conexión.");}}
-function stopHands(){if(handLoop)clearInterval(handLoop);handLoop=null;if(handTask){handTask.close();handTask=null}if(handStream){handStream.getTracks().forEach(t=>t.stop());handStream=null}$("#handOverlay").classList.add("hidden");$("#handBtn").classList.remove("active")}
+async function startHands(){
+ if(handStream){stopHands();return}
+ if(!navigator.mediaDevices?.getUserMedia){toast("Este navegador no permite acceder a la cámara.");return}
+ const video=$("#cameraVideo"),overlay=$("#handOverlay"),status=$("#handStatus");
+ overlay.classList.remove("hidden");status.textContent="Solicitando permiso de cámara...";
+ try{
+  handStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},audio:false});
+  video.srcObject=handStream;await video.play();
+  status.textContent="Cargando reconocimiento de manos...";
+  const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
+  const fs=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  handTask=await vision.HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numHands:2});
+  const canvas=$("#handCanvas"),ctx=canvas.getContext("2d");let last=0,wasPinching=false,lastPalm=null,lastTwoHandDistance=null;
+  handLoop=setInterval(()=>{
+   if(video.readyState<2||!handTask)return;
+   const now=performance.now();if(now-last<45)return;last=now;
+   const result=handTask.detectForVideo(video,now);canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.clearRect(0,0,canvas.width,canvas.height);
+   const hands=result.landmarks||[];
+   if(!hands.length){status.textContent="Muestra tus manos frente a la cámara";wasPinching=false;lastPalm=null;lastTwoHandDistance=null;return}
+   hands.forEach(lm=>{lm.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,5,0,Math.PI*2);ctx.fillStyle="#51e5ff";ctx.fill()});});
+   const hand=hands[0],thumb=hand[4],index=hand[8],wrist=hand[0],middle=hand[9],pinch=Math.hypot(thumb.x-index.x,thumb.y-index.y)<.065;
+   const palm={x:(thumb.x+index.x)/2,y:(thumb.y+index.y)/2};
+   if(pinch){
+    if(!wasPinching){const candidates=[...world.querySelectorAll(".interactive")];let nearest=null,best=Infinity;candidates.forEach(obj=>{const p=obj.getAttribute("position");const d=Math.hypot(p.x-(.5-palm.x)*7,p.y-(1.25-palm.y)*3.5);if(d<best){best=d;nearest=obj}});if(nearest){const item=current.items.find(v=>v[0]===nearest.dataset.name);selectObject(nearest,item||[nearest.dataset.name,nearest.dataset.description,"✋"]);}}
+    if(selectedEl){const px=(.5-palm.x)*7,py=Math.max(.45,Math.min(3,(1.12-palm.y)*3.1));selectedEl.setAttribute("position",`${px} ${py} -.25`);}
+    status.textContent="PINZA: mueve el objeto seleccionado";
+   }else if(lastPalm&&selectedEl){
+    const dx=palm.x-lastPalm.x,dy=palm.y-lastPalm.y;
+    const extended=[8,12,16,20].filter(n=>hand[n].y<hand[n-2].y).length;
+    if(extended>=3){const r=selectedEl.getAttribute("rotation");selectedEl.setAttribute("rotation",`${r.x+dy*220} ${r.y+dx*260} ${r.z}`);status.textContent="MANO ABIERTA: gira el objeto";}
+    else if(wrist.y<middle.y-.08){const p=selectedEl.getAttribute("position");selectedEl.setAttribute("position",`${p.x} ${Math.max(.4,Math.min(3,p.y-dy*3))} ${p.z}`);status.textContent="GESTO VERTICAL: mueve arriba o abajo";}
+   }else status.textContent="Haz pinza para seleccionar y mover · abre la mano para girar";
+   if(hands.length>1&&selectedEl){
+    const h2=hands[1],d=Math.hypot(hand[9].x-h2[9].x,hand[9].y-h2[9].y);
+    if(lastTwoHandDistance!==null){const factor=Math.max(.92,Math.min(1.08,1+(d-lastTwoHandDistance)*1.7));const s=selectedEl.getAttribute("scale");const next=Math.max(.35,Math.min(2.8,s.x*factor));selectedEl.setAttribute("scale",`${next} ${next} ${next}`);}
+    lastTwoHandDistance=d;status.textContent="DOS MANOS: separa o acerca para ampliar/reducir";
+   }else lastTwoHandDistance=null;
+   wasPinching=pinch;lastPalm=palm;
+  },35);
+  $("#handBtn").classList.add("active");$("#handBtn").textContent="✋ Desactivar manos";toast("Cámara activa: controla los objetos con tus manos.");
+ }catch(err){console.error(err);stopHands();toast("No se pudo iniciar la cámara. Acepta el permiso y verifica HTTPS e internet.");}
+}
+function stopHands(){
+ if(handLoop)clearInterval(handLoop);handLoop=null;
+ if(handTask){handTask.close();handTask=null}
+ if(handStream){handStream.getTracks().forEach(t=>t.stop());handStream=null}
+ const video=$("#cameraVideo");if(video)video.srcObject=null;
+ $("#handOverlay").classList.add("hidden");$("#handBtn").classList.remove("active");$("#handBtn").textContent="✋ Activar cámara y manos";
+}
 async function checkAR(){if(!navigator.xr){toast("Este navegador no ofrece WebXR AR. Puedes continuar en el escenario 3D.");return}try{const ok=await navigator.xr.isSessionSupported("immersive-ar");toast(ok?"Este dispositivo admite WebXR AR. La sesión inmersiva depende del navegador.":"WebXR AR no está disponible en este dispositivo.");}catch(e){toast("No fue posible comprobar WebXR en este navegador.")}}
 $("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Girar y ampliar:</b> utiliza los controles del panel.</li><li><b>Manos:</b> activa la cámara y forma una pinza con pulgar e índice para mover un objeto. Con dos manos puedes cambiar su tamaño.</li><li><b>Exploración:</b> usa las herramientas del laboratorio para activar simulaciones.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
