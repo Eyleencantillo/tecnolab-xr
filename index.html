@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#071326" />
+  <title>TECNOLAB XR | Laboratorio interactivo</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <a class="brand" href="#" id="brandHome"><span class="brand-mark">T<span>XR</span></span><span><b>TECNOLAB</b><small>LABORATORIO XR</small></span></a>
+      <div class="top-actions">
+        <span class="status-pill"><i></i> EXPERIENCIA INTERACTIVA</span>
+        <button class="icon-btn" id="helpBtn" aria-label="Ayuda">?</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="homeView" class="view active">
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">APRENDE · CONSTRUYE · EXPERIMENTA</p>
+            <h1>La tecnología<br><em>cobra vida.</em></h1>
+            <p class="hero-text">Explora laboratorios digitales, manipula objetos 3D y resuelve desafíos de tecnología e informática.</p>
+            <div class="hero-buttons">
+              <button class="primary-btn" id="exploreBtn">Entrar al laboratorio <span>↗</span></button>
+              <button class="secondary-btn" id="howBtn">Cómo interactuar</button>
+            </div>
+            <div class="hero-stats"><div><b>12</b><span>LABORATORIOS</span></div><div><b>3D</b><span>ENTORNOS INTERACTIVOS</span></div><div><b>XR</b><span>EXPLORACIÓN INMERSIVA</span></div></div>
+          </div>
+          <div class="hero-art" aria-label="Ilustración de un laboratorio tecnológico">
+            <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+            <div class="core-chip"><span>XR</span><small>TECH LAB</small></div>
+            <div class="float-card card-cpu">▦ <small>HARDWARE</small></div>
+            <div class="float-card card-network">⌘ <small>REDES</small></div>
+            <div class="float-card card-ai">✳ <small>IA</small></div>
+            <div class="glow"></div>
+          </div>
+        </div>
+        <div class="section-heading"><div><p class="eyebrow">CENTRO DE EXPERIENCIAS</p><h2>Selecciona un laboratorio</h2></div><span class="section-note">12 experiencias para explorar</span></div>
+        <div class="module-grid" id="moduleGrid"></div>
+      </section>
+
+      <section id="labView" class="view">
+        <div class="lab-heading">
+          <button class="back-btn" id="backBtn">← Volver a laboratorios</button>
+          <div><p class="eyebrow" id="labEyebrow">LABORATORIO 01</p><h2 id="labTitle">Hardware</h2><p id="labDescription"></p></div>
+          <div class="lab-heading-actions"><button class="secondary-btn small" id="resetBtn">↻ Reiniciar escena</button><button class="primary-btn small" id="challengeBtn">Ver desafío</button></div>
+        </div>
+        <div class="lab-layout">
+          <div class="scene-panel">
+            <div class="scene-toolbar">
+              <span class="scene-label"><i></i> ESCENARIO 3D</span>
+              <div class="scene-tools"><button id="handBtn" class="tool-btn">✋ Activar manos</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
+            </div>
+            <div id="sceneWrap">
+              <a-scene id="xrScene" embedded renderer="antialias: true; colorManagement: true" vr-mode-ui="enabled: false" background="color: #08172c">
+                <a-assets>
+                  <a-mixin id="interactive" class="interactive"></a-mixin>
+                </a-assets>
+                <a-entity id="world"></a-entity>
+                <a-entity camera position="0 2.3 7" look-controls="enabled: true" wasd-controls="enabled: true">
+                  <a-cursor color="#51e5ff" fuse="false" raycaster="objects: .interactive"></a-cursor>
+                </a-entity>
+                <a-entity light="type: ambient; intensity: 1.15"></a-entity>
+                <a-entity light="type: directional; intensity: 1.8" position="-3 6 4"></a-entity>
+              </a-scene>
+              <div id="sceneHint" class="scene-hint">Selecciona un objeto para explorarlo · Arrastra para girar la vista</div>
+              <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
+            </div>
+            <div class="scene-footer"><span>CONTROLES: mouse / táctil / gestos</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
+          </div>
+          <aside class="control-panel">
+            <div class="panel-title"><span>⌁</span><div><b>Panel de exploración</b><small>Interactúa con el escenario</small></div></div>
+            <div class="selected-card"><div class="selected-icon" id="selectedIcon">◇</div><div><small>ELEMENTO ACTUAL</small><b id="selectedName">Selecciona un objeto</b></div></div>
+            <p class="panel-description" id="selectedDescription">Haz clic o toca un objeto del escenario para conocerlo y manipularlo.</p>
+            <div class="control-group"><label>MANIPULACIÓN</label><div class="control-row"><button id="rotateLeft">↶ Girar</button><button id="rotateRight">↷ Girar</button></div><div class="control-row"><button id="scaleDown">− Reducir</button><button id="scaleUp">＋ Ampliar</button></div><button class="wide-btn" id="moveCenter">⌖ Centrar objeto</button></div>
+            <div class="control-group"><label>HERRAMIENTAS DEL LABORATORIO</label><div id="actionButtons" class="action-buttons"></div></div>
+            <div class="tip-box"><span>✦</span><div><b>Consejo de exploración</b><p id="tipText">Prueba seleccionar los componentes y cambiar su tamaño para observar sus detalles.</p></div></div>
+          </aside>
+        </div>
+        <div class="learning-strip"><div><span class="strip-icon">◎</span><div><b>Objetivo de aprendizaje</b><p id="objectiveText"></p></div></div><div class="progress-wrap"><span>PROGRESO DEL LABORATORIO</span><div class="progress-track"><i id="progressBar"></i></div></div></div>
+      </section>
+    </main>
+    <footer><span>TECNOLAB XR</span><span>Un espacio para aprender haciendo.</span><span>Versión prototipo 1.0</span></footer>
+  </div>
+
+  <div id="modal" class="modal hidden"><div class="modal-card"><button class="modal-close" id="modalClose">×</button><p class="eyebrow" id="modalEyebrow">TECNOLAB XR</p><h2 id="modalTitle">Cómo interactuar</h2><div id="modalBody"></div><button class="primary-btn" id="modalOk">Entendido</button></div></div>
+  <div id="toast" class="toast"></div>
+</body>
+</html>
