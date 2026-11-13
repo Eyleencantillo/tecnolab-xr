@@ -1,0 +1,10 @@
+{
+  "name": "TECNOLAB XR - Laboratorio interactivo",
+  "short_name": "TECNOLAB XR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071326",
+  "theme_color": "#071326",
+  "description": "Laboratorio interactivo de tecnología e informática."
+}
