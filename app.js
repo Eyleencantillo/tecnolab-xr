@@ -25,6 +25,11 @@ function buildScene(){
  world.innerHTML="";
  el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"10",height:"8",color:"#0b2540",material:"roughness: 1"});
  el("a-grid",{position:"0 .018 0",rotation:"-90 0 0",width:"10",height:"8",color:"#245274",opacity:".45"});
+ // Iluminación de estudio para dar volumen y reflejos a los modelos.
+ el("a-entity",{light:"type: ambient; color: #dceeff; intensity: 1.05",position:"0 4 0"});
+ el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.35",position:"-3 6 4"});
+ el("a-entity",{light:"type: point; color: #51dfff; intensity: .65; distance: 9",position:"3 2 1"});
+ el("a-entity",{light:"type: point; color: #ffb76b; intensity: .35; distance: 8",position:"-3 2 -2"});
  // Dos avatares guía acompañan la exploración en el laboratorio.
  addAvatar(-3.8, "Guía de laboratorio", "#3476c9");
  addAvatar(3.8, "Explorador XR", "#278e8b");
@@ -32,21 +37,39 @@ function buildScene(){
 }
 function addAvatar(x,label,shirt){
  const avatar=el("a-entity",{position:`${x} 0 .9`,class:"lab-avatar"});
- el("a-cylinder",{position:"0 .82 0",radius:".22",height:".55",color:shirt},avatar);
- el("a-sphere",{position:"0 1.28 0",radius:".19",color:"#d9a47c"},avatar);
- el("a-sphere",{position:"-.07 1.31 .16",radius:".025",color:"#10243d"},avatar);
- el("a-sphere",{position:".07 1.31 .16",radius:".025",color:"#10243d"},avatar);
- el("a-cylinder",{position:"-.28 .85 0",radius:".07",height:".48",rotation:"0 0 18",color:"#d9a47c"},avatar);
- el("a-cylinder",{position:".28 .85 0",radius:".07",height:".48",rotation:"0 0 -18",color:"#d9a47c"},avatar);
- el("a-cylinder",{position:"-.11 .28 0",radius:".075",height:".48",color:"#263d59"},avatar);
- el("a-cylinder",{position:".11 .28 0",radius:".075",height:".48",color:"#263d59"},avatar);
- el("a-text",{value:label,align:"center",color:"#bfeeff",width:"2.8",position:"0 1.58 0"},avatar);
+ // Personajes guía 3D estilizados, con ropa por capas y rostro detallado.
+ el("a-sphere",{position:"0 .91 0",scale:".30 .39 .19",color:shirt,material:"roughness:.72; metalness:.08"},avatar);
+ el("a-box",{position:"0 .73 0",width:".42",height:".13",depth:".25",color:shirt,material:"roughness:.7"},avatar);
+ el("a-cylinder",{position:"0 1.13 0",radius:".075",height:".17",color:"#c98d68"},avatar);
+ el("a-sphere",{position:"0 1.37 0",radius:".205",color:"#d9a47c",material:"roughness:.88"},avatar);
+ el("a-sphere",{position:"0 1.49 -.015",scale:"1 .48 1",radius:".205",color:"#34251f"},avatar);
+ el("a-sphere",{position:"-.205 1.37 0",scale:".16 .22 .12",color:"#c98d68"},avatar);
+ el("a-sphere",{position:".205 1.37 0",scale:".16 .22 .12",color:"#c98d68"},avatar);
+ el("a-sphere",{position:"-.073 1.385 .18",scale:".045 .055 .025",color:"#ffffff"},avatar);
+ el("a-sphere",{position:".073 1.385 .18",scale:".045 .055 .025",color:"#ffffff"},avatar);
+ el("a-sphere",{position:"-.073 1.385 .202",radius:".022",color:"#243044"},avatar);
+ el("a-sphere",{position:".073 1.385 .202",radius:".022",color:"#243044"},avatar);
+ el("a-sphere",{position:"0 1.32 .195",scale:".035 .05 .035",color:"#bd8060"},avatar);
+ el("a-torus",{position:"0 1.285 .18",radius:".065",radiusTubular:".009",arc:"180",rotation:"0 0 180",color:"#8d4f49"},avatar);
+ el("a-capsule",{position:"-.29 .91 0",radius:".085",height:".39",rotation:"0 0 24",color:shirt},avatar);
+ el("a-capsule",{position:".29 .91 0",radius:".085",height:".39",rotation:"0 0 -24",color:shirt},avatar);
+ el("a-sphere",{position:"-.39 .67 .015",radius:".075",color:"#d9a47c"},avatar);
+ el("a-sphere",{position:".39 .67 .015",radius:".075",color:"#d9a47c"},avatar);
+ el("a-capsule",{position:"-.115 .34 0",radius:".09",height:".42",color:"#263d59"},avatar);
+ el("a-capsule",{position:".115 .34 0",radius:".09",height:".42",color:"#263d59"},avatar);
+ el("a-box",{position:"-.12 .075 .075",width:".19",height:".12",depth:".32",color:"#182536",material:"roughness:.55"},avatar);
+ el("a-box",{position:".12 .075 .075",width:".19",height:".12",depth:".32",color:"#182536",material:"roughness:.55"},avatar);
+ el("a-box",{position:"0 .99 .19",width:".12",height:".22",depth:".025",color:"#e8f7ff"},avatar);
+ el("a-text",{value:label,align:"center",color:"#d9f6ff",width:"2.8",position:"0 1.72 0"},avatar);
 }
 function createObject(item,i){
  const x=(i-(current.items.length-1)/2)*1.45;
  const g=el("a-entity",{position:`${x} 1.05 -.35`,class:"interactive", "data-name":item[0],"data-description":item[1]});
  const hue=["#1c82b8","#3476c9","#278e8b","#765fc2","#bd7c42","#368cae"][i%6];
  const part=(tag,attrs)=>el(tag,attrs,g);
+ part("a-box",{position:"0 -.53 0",width:"1.28",height:".09",depth:".98",color:"#d5e4ed",material:"roughness:.34; metalness:.28"});
+ part("a-box",{position:"0 -.59 0",width:"1.18",height:".045",depth:".88",color:"#277b9d",material:"roughness:.38; metalness:.35"});
+ part("a-torus",{position:"0 -.475 0",rotation:"90 0 0",radius:".57",radiusTubular:".012",color:"#51e5ff",material:"emissive:#1689a9; emissiveIntensity:.28"});
  // Modelos 3D distintos según el contenido del laboratorio.
  if(current.id==="hardware"||current.id==="datos"){
    if(i===0){part("a-box",{width:"1.05",height:".12",depth:".78",color:"#176b55"});for(let n=0;n<4;n++)part("a-box",{position:`${-.36+n*.24} .12 0`,width:".12",height:".12",depth:".48",color:"#d5b45c"});}
