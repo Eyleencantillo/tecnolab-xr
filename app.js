@@ -192,15 +192,16 @@ async function startHands(){
     handCursor.forEach(c=>c.setAttribute("visible",false));dragging=false;activeHand=-1;twoBase=null;prevSingle=null;return;
    }
    const data=hands.slice(0,2).map((lm,i)=>({lm,p:palmOf(lm),pinch:isPinch(lm),index:i}));
+   const meshes=collectMeshes();
    data.forEach((h,i)=>{
     screenRay(h.p);
+    const intersection=raycaster.intersectObjects(meshes,false)[0];
     const cameraPos=scene.camera.getWorldPosition(new T.Vector3());
-    const point=cameraPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(3.8));
+    const point=intersection?intersection.point:cameraPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(7));
     handCursor[i].object3D.position.copy(point);handCursor[i].object3D.quaternion.copy(scene.camera.quaternion);
     handCursor[i].setAttribute("visible",true);
    });
    const pinching=data.filter(h=>h.pinch);
-   const meshes=collectMeshes();
    if(pinching.length===2){
     const mid={x:(pinching[0].p.x+pinching[1].p.x)/2,y:(pinching[0].p.y+pinching[1].p.y)/2};
     const dx=pinching[1].p.x-pinching[0].p.x,dy=pinching[1].p.y-pinching[0].p.y;
