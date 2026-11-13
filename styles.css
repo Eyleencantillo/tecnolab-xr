@@ -27,3 +27,10 @@ footer{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-cont
 #sceneWrap.camera-ar-active a-scene canvas{background:transparent!important}
 #sceneWrap.camera-ar-active .scene-hint{z-index:5}
 #sceneWrap.camera-ar-active .hand-overlay{z-index:6}
+
+/* Guía de gestos visible dentro del propio escenario 3D. */
+.scene-gesture-guide{position:absolute;z-index:5;top:12px;left:12px;width:min(260px,calc(100% - 235px));display:grid;gap:7px;padding:11px 12px;border:1px solid #51e5ff66;border-radius:10px;background:#061326eF;box-shadow:0 8px 24px #0006;pointer-events:none}
+.scene-gesture-guide b{font-size:9px;letter-spacing:1.3px;color:var(--cyan)}
+.scene-gesture-guide span{font-size:10px;line-height:1.35;color:#e1eff9}
+.scene-gesture-guide small{font-size:9px;line-height:1.4;color:#9eb9ce;border-top:1px solid var(--line);padding-top:6px}
+@media(max-width:650px){.scene-gesture-guide{top:112px;left:8px;width:calc(100% - 16px);gap:5px;padding:8px 10px}.scene-gesture-guide span{font-size:9px}.scene-gesture-guide small{font-size:8px}}
