@@ -15,3 +15,6 @@ footer{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-cont
 .hand-overlay span{font-size:9px;right:3px;text-align:center;color:#e8f7ff}
 #handBtn.active{background:#164b52;border-color:var(--green);color:var(--green)}
 @media(max-width:650px){.hand-overlay{width:132px;height:100px}.gesture-guide span{font-size:9px}}
+
+/* La manipulación de los modelos se realiza con seguimiento de manos. */
+.control-panel .control-group:has(#rotateLeft){display:none}
