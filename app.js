@@ -127,7 +127,7 @@ async function startHands(){
   const raycaster=new T.Raycaster(),ndc=new T.Vector2(),plane=new T.Plane(),hit=new T.Vector3(),normal=new T.Vector3(),offset=new T.Vector3();
   let last=0,dragging=false,dragPlane=null,activeHand=-1,twoBase=null,prevSingle=null,handCursor=[];
   for(let n=0;n<2;n++){
-   const cursor=el("a-sphere",{radius:".075",color:n===0?"#55e6bd":"#51e5ff",visible:"false"});
+   const cursor=el("a-sphere",{id:n===0?"handCursor":"handCursor2",radius:".075",color:n===0?"#55e6bd":"#51e5ff",visible:"false"});
    cursor.setAttribute("material","shader: flat; transparent: true; opacity: .9");
    handCursor.push(cursor);
   }
