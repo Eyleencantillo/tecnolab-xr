@@ -276,7 +276,7 @@ async function startHands(){
  }
 }
 function stopHands(){
- if(handLoop)clearInterval(handLoop);handLoop=null;
+ if(handLoop)cancelAnimationFrame(handLoop);handLoop=null;
  if(handTask){handTask.close();handTask=null}
  if(handStream){handStream.getTracks().forEach(t=>t.stop());handStream=null}
  const video=$("#cameraVideo");if(video)video.srcObject=null;
