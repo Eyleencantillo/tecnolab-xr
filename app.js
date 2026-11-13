@@ -118,7 +118,7 @@ async function startHands(){
   const files=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   const options={baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"CPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.35,minHandPresenceConfidence:.35,minTrackingConfidence:.35};
   handTask=await vision.HandLandmarker.createFromOptions(files,options);
-  const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene");
+  const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene"),T=window.AFRAME?.THREE||window.THREE;
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
   let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,anchor=null,previousPoint=null;
   const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
@@ -153,7 +153,7 @@ async function startHands(){
    if(!selectedEl)return;
    if(!anchor)anchor={point:p,position:selectedEl.object3D.position.clone()};
    const dx=(anchor.point.x-p.x)*5.2,dy=(anchor.point.y-p.y)*3.8;
-   selectedEl.object3D.position.x=THREE.MathUtils.clamp(anchor.position.x+dx,-4,4);
+   selectedEl.object3D.position.x=T.MathUtils.clamp(anchor.position.x+dx,-4,4);
    selectedEl.object3D.position.y=THREE.MathUtils.clamp(anchor.position.y+dy,.35,3.2);
    selectedEl.object3D.updateMatrixWorld(true);
   }
