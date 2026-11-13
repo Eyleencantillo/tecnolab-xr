@@ -113,163 +113,87 @@ async function startHands(){
  try{
   handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:960},height:{ideal:540},frameRate:{ideal:30,max:30}}});
   video.srcObject=handStream;await video.play();
-  status.textContent="Cargando modelo de seguimiento…";
+  status.textContent="Cargando reconocimiento de manos…";
   const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
   const files=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  const options={
-   baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},
-   runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.45,minHandPresenceConfidence:.45,minTrackingConfidence:.5
-  };
-  try{handTask=await vision.HandLandmarker.createFromOptions(files,options)}
-  catch(gpuError){
-   console.warn("GPU no disponible para seguimiento; se utilizará CPU.",gpuError);
-   options.baseOptions.delegate="CPU";
-   handTask=await vision.HandLandmarker.createFromOptions(files,options);
-  }
-  const scene=$("#xrScene"),canvas=$("#handCanvas"),ctx=canvas.getContext("2d");
+  const options={baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"CPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.35,minHandPresenceConfidence:.35,minTrackingConfidence:.35};
+  handTask=await vision.HandLandmarker.createFromOptions(files,options);
+  const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene");
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
-  const T=window.AFRAME?.THREE||window.THREE;
-  if(!T)throw new Error("No se pudo inicializar el motor 3D");
-  const raycaster=new T.Raycaster(),ndc=new T.Vector2(),plane=new T.Plane(),hit=new T.Vector3(),normal=new T.Vector3(),offset=new T.Vector3();
-  let dragging=false,dragPlane=null,activeHand=-1,twoBase=null,prevSingle=null,lastVideoTime=-1,lastDetect=0,smoothedHands=[],pinchStates=[false,false],handCursor=[];
+  let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,anchor=null,previousPoint=null;
   const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
-  for(let n=0;n<2;n++){
-   const cursor=el("a-sphere",{id:n===0?"handCursor":"handCursor2",radius:".075",color:n===0?"#55e6bd":"#51e5ff",visible:"false"});
-   cursor.setAttribute("material","shader: flat; transparent: true; opacity: .9");handCursor.push(cursor);
+  function center(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5}}
+  function classify(lm){
+   const wrist=lm[0];
+   const extended=[8,12,16,20].filter(tip=>{
+    const pip=tip-2;
+    const tipD=Math.hypot(lm[tip].x-wrist.x,lm[tip].y-wrist.y);
+    const pipD=Math.hypot(lm[pip].x-wrist.x,lm[pip].y-wrist.y);
+    return tipD>pipD*1.12;
+   }).length;
+   if(extended>=3)return "OPEN";
+   if(extended<=1)return "FIST";
+   return "NEUTRAL";
   }
-  function palmOf(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5}}
-  function pinchPoint(lm){return {x:(lm[4].x+lm[8].x)/2,y:(lm[4].y+lm[8].y)/2}}
-  function pinchRatio(lm){
-   const d=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
-   const palm=Math.max(.001,Math.hypot(lm[5].x-lm[17].x,lm[5].y-lm[17].y));
-   return d/palm;
-  }
-  function screenRay(p){
-   ndc.set((1-p.x)*2-1,1-p.y*2);
-   raycaster.setFromCamera(ndc,scene.camera);
-  }
-  function collectMeshes(){
-   const roots=[...world.querySelectorAll(".interactive")],meshes=[];
-   roots.forEach(root=>root.object3D.traverse(node=>{if(node.isMesh){node.userData.handRoot=root;meshes.push(node)}}));
-   return meshes;
-  }
-  function hitObject(p,meshes){
-   screenRay(p);const found=raycaster.intersectObjects(meshes,false)[0];
-   return found?.object?.userData?.handRoot||null;
-  }
-  function selectForHands(obj){
-   if(!obj)return;
-   const item=current.items.find(v=>v[0]===obj.dataset.name);
-   selectObject(obj,item||[obj.dataset.name,obj.dataset.description,"✋"]);
-  }
-  function startDrag(obj,p){
-   if(!obj||!scene.camera)return false;
-   selectForHands(obj);screenRay(p);
-   const worldPos=obj.object3D.getWorldPosition(new T.Vector3());
-   scene.camera.getWorldDirection(normal);
-   plane.setFromNormalAndCoplanarPoint(normal,worldPos);dragPlane=plane.clone();
-   if(!raycaster.ray.intersectPlane(dragPlane,hit))return false;
-   offset.copy(worldPos).sub(hit);dragging=true;return true;
-  }
-  function moveOnPlane(p){
-   if(!dragging||!selectedEl||!dragPlane)return;
-   screenRay(p);
-   if(raycaster.ray.intersectPlane(dragPlane,hit)){
-    const destination=hit.clone().add(offset);
-    selectedEl.object3D.position.copy(destination);selectedEl.object3D.updateMatrixWorld(true);
-   }
-  }
-  function drawHands(hands){
+  function draw(hands){
    if(!video.videoWidth||!video.videoHeight)return;
    if(canvas.width!==video.videoWidth||canvas.height!==video.videoHeight){canvas.width=video.videoWidth;canvas.height=video.videoHeight}
    ctx.clearRect(0,0,canvas.width,canvas.height);
-   hands.forEach((lm,idx)=>{
-    ctx.lineWidth=Math.max(2,canvas.width/360);ctx.strokeStyle=idx===0?"#55e6bd":"#51e5ff";
+   hands.forEach((lm,i)=>{
+    ctx.lineWidth=Math.max(2,canvas.width/360);ctx.strokeStyle=i===0?"#55e6bd":"#51e5ff";
     bones.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(lm[a].x*canvas.width,lm[a].y*canvas.height);ctx.lineTo(lm[b].x*canvas.width,lm[b].y*canvas.height);ctx.stroke()});
-    lm.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,Math.max(2,canvas.width/220),0,Math.PI*2);ctx.fillStyle=idx===0?"#55e6bd":"#51e5ff";ctx.fill()});
+    lm.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,Math.max(2,canvas.width/220),0,Math.PI*2);ctx.fillStyle=i===0?"#55e6bd":"#51e5ff";ctx.fill()});
    });
+  }
+  function setGesture(next){
+   if(next===candidate)candidateFrames++;else{candidate=next;candidateFrames=1}
+   if(candidateFrames>=3&&gesture!==candidate){gesture=candidate;anchor=null;previousPoint=null}
+  }
+  function moveSelected(p){
+   if(!selectedEl)return;
+   if(!anchor)anchor={point:p,position:selectedEl.object3D.position.clone()};
+   const dx=(anchor.point.x-p.x)*5.2,dy=(anchor.point.y-p.y)*3.8;
+   selectedEl.object3D.position.x=THREE.MathUtils.clamp(anchor.position.x+dx,-4,4);
+   selectedEl.object3D.position.y=THREE.MathUtils.clamp(anchor.position.y+dy,.35,3.2);
+   selectedEl.object3D.updateMatrixWorld(true);
+  }
+  function rotateSelected(p){
+   if(!selectedEl){previousPoint=p;return}
+   if(previousPoint){selectedEl.object3D.rotation.y+=(p.x-previousPoint.x)*3.2;selectedEl.object3D.rotation.x+=(p.y-previousPoint.y)*2.4}
+   previousPoint=p;
   }
   function frame(){
    handLoop=requestAnimationFrame(frame);
-   if(video.readyState<2||!handTask||!scene.camera||video.currentTime===lastVideoTime)return;
-   const now=performance.now();if(now-lastDetect<28)return;lastDetect=now;lastVideoTime=video.currentTime;
-   let result;
-   try{result=handTask.detectForVideo(video,now)}catch(error){console.warn("Error de lectura de manos:",error);return}
+   if(video.readyState<2||!handTask||video.currentTime===lastVideoTime)return;
+   const now=performance.now();if(now-lastDetect<30)return;lastDetect=now;lastVideoTime=video.currentTime;
+   let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.warn("Error de lectura de manos:",error);return}
    const raw=result.landmarks||[];
    const hands=raw.slice(0,2).map((lm,i)=>{
-    const previous=smoothedHands[i];
-    const smooth=previous?lm.map((p,j)=>({x:previous[j].x*.58+p.x*.42,y:previous[j].y*.58+p.y*.42,z:(previous[j].z||0)*.58+(p.z||0)*.42})):lm.map(p=>({...p}));
-    smoothedHands[i]=smooth;
-    const ratio=pinchRatio(smooth);
-    // Umbral de cierre y apertura distintos para evitar que la pinza parpadee.
-    pinchStates[i]=pinchStates[i]?ratio<.52:ratio<.34;
-    return {lm:smooth,p:palmOf(smooth),pinchPoint:pinchPoint(smooth),pinch:pinchStates[i],index:i,ratio};
+    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.65+p.x*.35,y:old[j].y*.65+p.y*.35,z:p.z||0})):lm.map(p=>({...p}));
+    smooth[i]=filtered;return filtered;
    });
-   drawHands(hands.map(h=>h.lm));
+   draw(hands);
    if(!hands.length){
-    status.textContent="No detecto manos. Mejora la iluminación y coloca las manos completas frente a la cámara.";
-    handCursor.forEach(c=>c.setAttribute("visible",false));dragging=false;dragPlane=null;activeHand=-1;twoBase=null;prevSingle=null;smoothedHands=[];pinchStates=[false,false];return;
+    status.textContent="No detecto manos. Coloca una mano completa frente a la cámara y mejora la iluminación.";
+    setGesture("NONE");smooth=[];return;
    }
-   const meshes=collectMeshes();
-   hands.forEach((h,i)=>{
-    const p=h.pinch?h.pinchPoint:h.p;
-    screenRay(p);
-    const intersection=raycaster.intersectObjects(meshes,false)[0];
-    const cameraPos=scene.camera.getWorldPosition(new T.Vector3());
-    const point=intersection?intersection.point:cameraPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(5));
-    handCursor[i].object3D.position.copy(point);handCursor[i].object3D.quaternion.copy(scene.camera.quaternion);
-    handCursor[i].setAttribute("visible",true);
-   });
-   handCursor.slice(hands.length).forEach(c=>c.setAttribute("visible",false));
-   const pinching=hands.filter(h=>h.pinch);
-   if(pinching.length===2){
-    const a=pinching[0].pinchPoint,b=pinching[1].pinchPoint;
-    const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
-    const dx=b.x-a.x,dy=b.y-a.y,distance=Math.max(.02,Math.hypot(dx,dy)),angle=Math.atan2(dy,dx);
-    if(!dragging){
-     const target=hitObject(mid,meshes)||hitObject(a,meshes)||hitObject(b,meshes);
-     if(target)startDrag(target,mid);
-    }
-    if(dragging&&selectedEl){
-     if(!twoBase)twoBase={distance,angle,scale:selectedEl.object3D.scale.clone(),rotation:selectedEl.object3D.rotation.clone()};
-     moveOnPlane(mid);
-     const ratio=Math.max(.4,Math.min(2.8,distance/twoBase.distance));
-     selectedEl.object3D.scale.copy(twoBase.scale).multiplyScalar(ratio);
-     selectedEl.object3D.rotation.z=twoBase.rotation.z+(angle-twoBase.angle);
-     selectedEl.object3D.updateMatrixWorld(true);
-     status.textContent="DOS MANOS · separa o acerca para cambiar tamaño; gira y desplaza ambas manos para manipular";
-    }else status.textContent="Acerca las dos pinzas al mismo objeto para manipularlo";
-    activeHand=-1;prevSingle=null;
-   }else if(pinching.length===1){
-    const h=pinching[0],p=h.pinchPoint;
-    if(!dragging||activeHand!==h.index){
-     const target=hitObject(p,meshes);
-     if(target){startDrag(target,p);activeHand=h.index}
-    }
-    if(dragging){moveOnPlane(p);status.textContent="PINZA ACTIVA · mueve la mano para desplazar el objeto"}
-    else status.textContent="Pinza detectada · acerca el pulgar y el índice sobre un objeto";
-    twoBase=null;prevSingle=null;
+   const p=center(hands[0]),detected=classify(hands[0]);
+   setGesture(detected);
+   if(detected==="FIST"){
+    if(selectedEl){moveSelected(p);status.textContent="PUÑO CERRADO · moviendo el objeto seleccionado. Abre la mano para soltar."}
+    else status.textContent="PUÑO DETECTADO · primero selecciona un objeto con clic o toque.";
+   }else if(detected==="OPEN"){
+    if(selectedEl)rotateSelected(p);
+    else previousPoint=p;
+    status.textContent="MANO ABIERTA · mueve la mano para girar el objeto seleccionado.";
    }else{
-    if(dragging){dragging=false;dragPlane=null;activeHand=-1;twoBase=null}
-    if(selectedEl&&hands.length===1){
-     const h=hands[0],wrist=h.lm[0];
-     const extended=[8,12,16,20].filter(n=>Math.hypot(h.lm[n].x-wrist.x,h.lm[n].y-wrist.y)>Math.hypot(h.lm[n-2].x-wrist.x,h.lm[n-2].y-wrist.y)*1.18).length;
-     if(extended>=3&&prevSingle){
-      const dx=h.p.x-prevSingle.x,dy=h.p.y-prevSingle.y;
-      selectedEl.object3D.rotation.y+=dx*2.2;selectedEl.object3D.rotation.x+=dy*2.0;
-      status.textContent="MANO ABIERTA · gira el objeto seleccionado";
-     }else status.textContent="Mano detectada · cierra pulgar e índice para agarrar";
-     prevSingle=h.p;
-    }else{
-     status.textContent=hands.length+" MANO(S) DETECTADA(S) · pinza para agarrar; dos pinzas para ampliar y girar";
-     prevSingle=null;
-    }
-    twoBase=null;
+    anchor=null;previousPoint=null;
+    status.textContent=hands.length===2?"DOS MANOS DETECTADAS · usa una mano para controlar el objeto.":"MANO DETECTADA · cierra el puño para mover; abre la mano para girar.";
    }
   }
   frame();
   $("#handBtn").classList.add("active");$("#handBtn").textContent="✋ Desactivar seguimiento";
-  toast("Seguimiento mejorado: detección suavizada y pinza más estable.");
+  toast("Seguimiento activo. Usa puño cerrado y mano abierta; ya no necesitas hacer pinza.");
  }catch(err){
   console.error(err);stopHands();
   toast("No se pudo iniciar el seguimiento. Revisa el permiso de cámara e inténtalo de nuevo.");
@@ -346,7 +270,7 @@ function restoreARScene(){
  if(scene)scene.setAttribute("background",arOriginalBackground||"color: #08172c");
  arModeActive=false;arSession=null;
  if(btn){btn.disabled=false;btn.classList.remove("active");btn.textContent="◉ Modo AR"}
- if($("#sceneHint"))$("#sceneHint").textContent="Tus manos físicas interactúan directamente con los modelos virtuales: apunta, sujeta, mueve, gira y amplía";
+ if($("#sceneHint"))$("#sceneHint").textContent="Tus manos físicas interactúan directamente con los modelos virtuales: selecciona un objeto, cierra el puño para moverlo y abre la mano para girarlo";
 }
 function stopARMode(){
  const scene=$("#xrScene");
@@ -360,4 +284,4 @@ function sceneARExitListener(){
  const scene=$("#xrScene");
  scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
 }
-$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Girar y ampliar:</b> utiliza los controles del panel.</li><li><b>Manos físicas:</b> apunta a un modelo virtual; haz pinza para sujetarlo y arrastrarlo, abre la mano para girarlo y usa ambas manos para ampliar o reducir.</li><li><b>Exploración:</b> usa las herramientas del laboratorio para activar simulaciones.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Girar y ampliar:</b> utiliza los controles del panel.</li><li><b>Manos físicas:</b> apunta a un modelo virtual; selecciona primero un objeto con clic o toque; cierra el puño para moverlo y abre la mano para girarlo.</li><li><b>Exploración:</b> usa las herramientas del laboratorio para activar simulaciones.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
