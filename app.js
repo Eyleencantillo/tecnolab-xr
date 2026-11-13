@@ -125,11 +125,19 @@ async function startHands(){
   function center(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5}}
   function classify(lm){
    const wrist=lm[0];
+   const palmWidth=Math.max(.001,Math.hypot(lm[5].x-lm[17].x,lm[5].y-lm[17].y));
+   const pinchRatio=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y)/palmWidth;
+   const otherExtended=[12,16,20].filter(tip=>{
+    const pip=tip-2;
+    return Math.hypot(lm[tip].x-wrist.x,lm[tip].y-wrist.y)>
+      Math.hypot(lm[pip].x-wrist.x,lm[pip].y-wrist.y)*1.12;
+   }).length;
+   if(pinchRatio<.38)return "PINCH";
+   if(pinchRatio>.82&&otherExtended<=1)return "SPREAD";
    const extended=[8,12,16,20].filter(tip=>{
     const pip=tip-2;
-    const tipD=Math.hypot(lm[tip].x-wrist.x,lm[tip].y-wrist.y);
-    const pipD=Math.hypot(lm[pip].x-wrist.x,lm[pip].y-wrist.y);
-    return tipD>pipD*1.12;
+    return Math.hypot(lm[tip].x-wrist.x,lm[tip].y-wrist.y)>
+      Math.hypot(lm[pip].x-wrist.x,lm[pip].y-wrist.y)*1.12;
    }).length;
    if(extended>=3)return "OPEN";
    if(extended<=1)return "FIST";
@@ -154,13 +162,25 @@ async function startHands(){
    if(!anchor)anchor={point:p,position:selectedEl.object3D.position.clone()};
    const dx=(anchor.point.x-p.x)*5.2,dy=(anchor.point.y-p.y)*3.8;
    selectedEl.object3D.position.x=T.MathUtils.clamp(anchor.position.x+dx,-4,4);
-   selectedEl.object3D.position.y=THREE.MathUtils.clamp(anchor.position.y+dy,.35,3.2);
+   selectedEl.object3D.position.y=T.MathUtils.clamp(anchor.position.y+dy,.35,3.2);
    selectedEl.object3D.updateMatrixWorld(true);
   }
   function rotateSelected(p){
    if(!selectedEl){previousPoint=p;return}
-   if(previousPoint){selectedEl.object3D.rotation.y+=(p.x-previousPoint.x)*3.2;selectedEl.object3D.rotation.x+=(p.y-previousPoint.y)*2.4}
+   if(previousPoint){
+    const dx=p.x-previousPoint.x,dy=p.y-previousPoint.y;
+    selectedEl.object3D.rotation.y-=dx*4.8;
+    selectedEl.object3D.rotation.x+=dy*3.2;
+   }
    previousPoint=p;
+  }
+  function zoomSelected(direction){
+   if(!selectedEl)return;
+   const obj=selectedEl.object3D;
+   const factor=direction>0?1.018:.982;
+   const next=T.MathUtils.clamp(obj.scale.x*factor,.45,3);
+   obj.scale.set(next,next,next);
+   obj.updateMatrixWorld(true);
   }
   function frame(){
    handLoop=requestAnimationFrame(frame);
@@ -180,20 +200,28 @@ async function startHands(){
    const p=center(hands[0]),detected=classify(hands[0]);
    setGesture(detected);
    if(detected==="FIST"){
-    if(selectedEl){moveSelected(p);status.textContent="PUÑO CERRADO · moviendo el objeto seleccionado. Abre la mano para soltar."}
-    else status.textContent="PUÑO DETECTADO · primero selecciona un objeto con clic o toque.";
+    if(selectedEl){moveSelected(p);status.textContent="PUÑO CERRADO · mueve el objeto. Abre la mano para soltar."}
+    else status.textContent="PUÑO DETECTADO · selecciona primero un objeto con clic o toque.";
    }else if(detected==="OPEN"){
-    if(selectedEl)rotateSelected(p);
-    else previousPoint=p;
-    status.textContent="MANO ABIERTA · mueve la mano para girar el objeto seleccionado.";
+    anchor=null;
+    if(selectedEl)rotateSelected(p);else previousPoint=p;
+    status.textContent="MANO ABIERTA · desplázala a izquierda o derecha para girar el objeto.";
+   }else if(detected==="PINCH"){
+    anchor=null;previousPoint=null;
+    if(selectedEl){zoomSelected(1);status.textContent="PELLIZCO CERRADO · acercando el objeto."}
+    else status.textContent="PELLIZCO DETECTADO · selecciona primero un objeto.";
+   }else if(detected==="SPREAD"){
+    anchor=null;previousPoint=null;
+    if(selectedEl){zoomSelected(-1);status.textContent="PELLIZCO ABIERTO · alejando el objeto."}
+    else status.textContent="SEPARA PULGAR E ÍNDICE · selecciona primero un objeto.";
    }else{
     anchor=null;previousPoint=null;
-    status.textContent=hands.length===2?"DOS MANOS DETECTADAS · usa una mano para controlar el objeto.":"MANO DETECTADA · cierra el puño para mover; abre la mano para girar.";
+    status.textContent="MANO DETECTADA · puño: mover · mano abierta: girar · pellizco: acercar · separar dedos: alejar.";
    }
   }
   frame();
   $("#handBtn").classList.add("active");$("#handBtn").textContent="✋ Desactivar seguimiento";
-  toast("Seguimiento activo. Usa puño cerrado y mano abierta; ya no necesitas hacer pinza.");
+  toast("Seguimiento activo: puño para mover, mano abierta para girar y pellizco para acercar o alejar.");
  }catch(err){
   console.error(err);stopHands();
   toast("No se pudo iniciar el seguimiento. Revisa el permiso de cámara e inténtalo de nuevo.");
