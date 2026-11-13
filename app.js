@@ -111,31 +111,40 @@ async function startHands(){
  const video=$("#cameraVideo"),overlay=$("#handOverlay"),status=$("#handStatus");
  overlay.classList.remove("hidden");status.textContent="Solicitando acceso a la cámara…";
  try{
-  handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:1280},height:{ideal:720}}});
+  handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:960},height:{ideal:540},frameRate:{ideal:30,max:30}}});
   video.srcObject=handStream;await video.play();
-  status.textContent="Cargando seguimiento de ambas manos…";
+  status.textContent="Cargando modelo de seguimiento…";
   const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
   const files=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  handTask=await vision.HandLandmarker.createFromOptions(files,{
+  const options={
    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},
-   runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.55,minHandPresenceConfidence:.55,minTrackingConfidence:.55
-  });
+   runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.45,minHandPresenceConfidence:.45,minTrackingConfidence:.5
+  };
+  try{handTask=await vision.HandLandmarker.createFromOptions(files,options)}
+  catch(gpuError){
+   console.warn("GPU no disponible para seguimiento; se utilizará CPU.",gpuError);
+   options.baseOptions.delegate="CPU";
+   handTask=await vision.HandLandmarker.createFromOptions(files,options);
+  }
   const scene=$("#xrScene"),canvas=$("#handCanvas"),ctx=canvas.getContext("2d");
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
   const T=window.AFRAME?.THREE||window.THREE;
   if(!T)throw new Error("No se pudo inicializar el motor 3D");
   const raycaster=new T.Raycaster(),ndc=new T.Vector2(),plane=new T.Plane(),hit=new T.Vector3(),normal=new T.Vector3(),offset=new T.Vector3();
-  let last=0,dragging=false,dragPlane=null,activeHand=-1,twoBase=null,prevSingle=null,handCursor=[];
+  let dragging=false,dragPlane=null,activeHand=-1,twoBase=null,prevSingle=null,lastVideoTime=-1,lastDetect=0,smoothedHands=[],pinchStates=[false,false],handCursor=[];
+  const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
   for(let n=0;n<2;n++){
    const cursor=el("a-sphere",{id:n===0?"handCursor":"handCursor2",radius:".075",color:n===0?"#55e6bd":"#51e5ff",visible:"false"});
-   cursor.setAttribute("material","shader: flat; transparent: true; opacity: .9");
-   handCursor.push(cursor);
+   cursor.setAttribute("material","shader: flat; transparent: true; opacity: .9");handCursor.push(cursor);
   }
-  const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
   function palmOf(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5}}
-  function isPinch(lm){const d=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);return d<Math.max(.045,Math.hypot(lm[0].x-lm[9].x,lm[0].y-lm[9].y)*.32)}
+  function pinchPoint(lm){return {x:(lm[4].x+lm[8].x)/2,y:(lm[4].y+lm[8].y)/2}}
+  function pinchRatio(lm){
+   const d=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
+   const palm=Math.max(.001,Math.hypot(lm[5].x-lm[17].x,lm[5].y-lm[17].y));
+   return d/palm;
+  }
   function screenRay(p){
-   // Coordenadas espejadas para que el movimiento coincida con la imagen que ve el usuario.
    ndc.set((1-p.x)*2-1,1-p.y*2);
    raycaster.setFromCamera(ndc,scene.camera);
   }
@@ -145,8 +154,8 @@ async function startHands(){
    return meshes;
   }
   function hitObject(p,meshes){
-   screenRay(p);const hitTest=raycaster.intersectObjects(meshes,false)[0];
-   return hitTest?.object?.userData?.handRoot||null;
+   screenRay(p);const found=raycaster.intersectObjects(meshes,false)[0];
+   return found?.object?.userData?.handRoot||null;
   }
   function selectForHands(obj){
    if(!obj)return;
@@ -154,97 +163,113 @@ async function startHands(){
    selectObject(obj,item||[obj.dataset.name,obj.dataset.description,"✋"]);
   }
   function startDrag(obj,p){
-   if(!obj||!scene.camera)return;
+   if(!obj||!scene.camera)return false;
    selectForHands(obj);screenRay(p);
    const worldPos=obj.object3D.getWorldPosition(new T.Vector3());
    scene.camera.getWorldDirection(normal);
-   plane.setFromNormalAndCoplanarPoint(normal,worldPos);
-   dragPlane=plane.clone();
-   raycaster.ray.intersectPlane(dragPlane,hit);
-   offset.copy(worldPos).sub(hit);
-   dragging=true;
+   plane.setFromNormalAndCoplanarPoint(normal,worldPos);dragPlane=plane.clone();
+   if(!raycaster.ray.intersectPlane(dragPlane,hit))return false;
+   offset.copy(worldPos).sub(hit);dragging=true;return true;
   }
   function moveOnPlane(p){
    if(!dragging||!selectedEl||!dragPlane)return;
    screenRay(p);
    if(raycaster.ray.intersectPlane(dragPlane,hit)){
     const destination=hit.clone().add(offset);
-    selectedEl.object3D.position.copy(destination);
-    selectedEl.object3D.updateMatrixWorld(true);
+    selectedEl.object3D.position.copy(destination);selectedEl.object3D.updateMatrixWorld(true);
    }
   }
   function drawHands(hands){
-   canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+   if(!video.videoWidth||!video.videoHeight)return;
+   if(canvas.width!==video.videoWidth||canvas.height!==video.videoHeight){canvas.width=video.videoWidth;canvas.height=video.videoHeight}
    ctx.clearRect(0,0,canvas.width,canvas.height);
    hands.forEach((lm,idx)=>{
-    ctx.lineWidth=Math.max(2,canvas.width/320);ctx.strokeStyle=idx===0?"#55e6bd":"#51e5ff";
+    ctx.lineWidth=Math.max(2,canvas.width/360);ctx.strokeStyle=idx===0?"#55e6bd":"#51e5ff";
     bones.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(lm[a].x*canvas.width,lm[a].y*canvas.height);ctx.lineTo(lm[b].x*canvas.width,lm[b].y*canvas.height);ctx.stroke()});
-    lm.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,Math.max(2,canvas.width/180),0,Math.PI*2);ctx.fillStyle=idx===0?"#55e6bd":"#51e5ff";ctx.fill()});
+    lm.forEach(p=>{ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,Math.max(2,canvas.width/220),0,Math.PI*2);ctx.fillStyle=idx===0?"#55e6bd":"#51e5ff";ctx.fill()});
    });
   }
-  handLoop=setInterval(()=>{
-   if(video.readyState<2||!handTask||!scene.camera)return;
-   const now=performance.now();if(now-last<32)return;last=now;
-   const result=handTask.detectForVideo(video,now),hands=result.landmarks||[];
-   drawHands(hands);
+  function frame(){
+   handLoop=requestAnimationFrame(frame);
+   if(video.readyState<2||!handTask||!scene.camera||video.currentTime===lastVideoTime)return;
+   const now=performance.now();if(now-lastDetect<28)return;lastDetect=now;lastVideoTime=video.currentTime;
+   let result;
+   try{result=handTask.detectForVideo(video,now)}catch(error){console.warn("Error de lectura de manos:",error);return}
+   const raw=result.landmarks||[];
+   const hands=raw.slice(0,2).map((lm,i)=>{
+    const previous=smoothedHands[i];
+    const smooth=previous?lm.map((p,j)=>({x:previous[j].x*.58+p.x*.42,y:previous[j].y*.58+p.y*.42,z:(previous[j].z||0)*.58+(p.z||0)*.42})):lm.map(p=>({...p}));
+    smoothedHands[i]=smooth;
+    const ratio=pinchRatio(smooth);
+    // Umbral de cierre y apertura distintos para evitar que la pinza parpadee.
+    pinchStates[i]=pinchStates[i]?ratio<.52:ratio<.34;
+    return {lm:smooth,p:palmOf(smooth),pinchPoint:pinchPoint(smooth),pinch:pinchStates[i],index:i,ratio};
+   });
+   drawHands(hands.map(h=>h.lm));
    if(!hands.length){
-    status.textContent="No detecto manos. Coloca ambas dentro del encuadre.";
-    handCursor.forEach(c=>c.setAttribute("visible",false));dragging=false;activeHand=-1;twoBase=null;prevSingle=null;return;
+    status.textContent="No detecto manos. Mejora la iluminación y coloca las manos completas frente a la cámara.";
+    handCursor.forEach(c=>c.setAttribute("visible",false));dragging=false;dragPlane=null;activeHand=-1;twoBase=null;prevSingle=null;smoothedHands=[];pinchStates=[false,false];return;
    }
-   const data=hands.slice(0,2).map((lm,i)=>({lm,p:palmOf(lm),pinch:isPinch(lm),index:i}));
    const meshes=collectMeshes();
-   data.forEach((h,i)=>{
-    screenRay(h.p);
+   hands.forEach((h,i)=>{
+    const p=h.pinch?h.pinchPoint:h.p;
+    screenRay(p);
     const intersection=raycaster.intersectObjects(meshes,false)[0];
     const cameraPos=scene.camera.getWorldPosition(new T.Vector3());
-    const point=intersection?intersection.point:cameraPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(7));
+    const point=intersection?intersection.point:cameraPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(5));
     handCursor[i].object3D.position.copy(point);handCursor[i].object3D.quaternion.copy(scene.camera.quaternion);
     handCursor[i].setAttribute("visible",true);
    });
-   const pinching=data.filter(h=>h.pinch);
+   handCursor.slice(hands.length).forEach(c=>c.setAttribute("visible",false));
+   const pinching=hands.filter(h=>h.pinch);
    if(pinching.length===2){
-    const mid={x:(pinching[0].p.x+pinching[1].p.x)/2,y:(pinching[0].p.y+pinching[1].p.y)/2};
-    const dx=pinching[1].p.x-pinching[0].p.x,dy=pinching[1].p.y-pinching[0].p.y;
-    const distance=Math.max(.04,Math.hypot(dx,dy)),angle=Math.atan2(dy,dx);
-    if(!dragging){const target=hitObject(mid,meshes);if(target)startDrag(target,mid)}
-    if(selectedEl){
-     if(!twoBase){twoBase={distance,angle,scale:selectedEl.object3D.scale.clone(),rotation:selectedEl.object3D.rotation.clone()};}
+    const a=pinching[0].pinchPoint,b=pinching[1].pinchPoint;
+    const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+    const dx=b.x-a.x,dy=b.y-a.y,distance=Math.max(.02,Math.hypot(dx,dy)),angle=Math.atan2(dy,dx);
+    if(!dragging){
+     const target=hitObject(mid,meshes)||hitObject(a,meshes)||hitObject(b,meshes);
+     if(target)startDrag(target,mid);
+    }
+    if(dragging&&selectedEl){
+     if(!twoBase)twoBase={distance,angle,scale:selectedEl.object3D.scale.clone(),rotation:selectedEl.object3D.rotation.clone()};
      moveOnPlane(mid);
-     const ratio=Math.max(.35,Math.min(3.2,distance/twoBase.distance));
+     const ratio=Math.max(.4,Math.min(2.8,distance/twoBase.distance));
      selectedEl.object3D.scale.copy(twoBase.scale).multiplyScalar(ratio);
      selectedEl.object3D.rotation.z=twoBase.rotation.z+(angle-twoBase.angle);
      selectedEl.object3D.updateMatrixWorld(true);
-     status.textContent="DOS MANOS ACTIVAS · separa/acerca para escalar · gira las muñecas para rotar · mueve ambas para trasladar";
-    }else status.textContent="Acerca ambas manos a un modelo y haz pinza con las dos para manipularlo";
+     status.textContent="DOS MANOS · separa o acerca para cambiar tamaño; gira y desplaza ambas manos para manipular";
+    }else status.textContent="Acerca las dos pinzas al mismo objeto para manipularlo";
     activeHand=-1;prevSingle=null;
    }else if(pinching.length===1){
-    const h=pinching[0];
+    const h=pinching[0],p=h.pinchPoint;
     if(!dragging||activeHand!==h.index){
-     const target=hitObject(h.p,meshes);
-     if(target){startDrag(target,h.p);activeHand=h.index}
+     const target=hitObject(p,meshes);
+     if(target){startDrag(target,p);activeHand=h.index}
     }
-    if(dragging){moveOnPlane(h.p);status.textContent=`MANO ${h.index+1} · AGARRANDO: desplaza el objeto por el escenario`}
+    if(dragging){moveOnPlane(p);status.textContent="PINZA ACTIVA · mueve la mano para desplazar el objeto"}
+    else status.textContent="Pinza detectada · acerca el pulgar y el índice sobre un objeto";
     twoBase=null;prevSingle=null;
    }else{
     if(dragging){dragging=false;dragPlane=null;activeHand=-1;twoBase=null}
-    if(selectedEl&&data.length===1){
-     const h=data[0],extended=[8,12,16,20].filter(n=>h.lm[n].y<h.lm[n-2].y).length;
+    if(selectedEl&&hands.length===1){
+     const h=hands[0],wrist=h.lm[0];
+     const extended=[8,12,16,20].filter(n=>Math.hypot(h.lm[n].x-wrist.x,h.lm[n].y-wrist.y)>Math.hypot(h.lm[n-2].x-wrist.x,h.lm[n-2].y-wrist.y)*1.18).length;
      if(extended>=3&&prevSingle){
       const dx=h.p.x-prevSingle.x,dy=h.p.y-prevSingle.y;
-      const rot=selectedEl.object3D.rotation;
-      rot.y+=dx*2.8;rot.x+=dy*2.4;
-      status.textContent="MANO ABIERTA · gira el modelo seleccionado";
-     }else status.textContent="Mano detectada · haz pinza sobre un modelo para agarrarlo";
+      selectedEl.object3D.rotation.y+=dx*2.2;selectedEl.object3D.rotation.x+=dy*2.0;
+      status.textContent="MANO ABIERTA · gira el objeto seleccionado";
+     }else status.textContent="Mano detectada · cierra pulgar e índice para agarrar";
      prevSingle=h.p;
     }else{
-     status.textContent=`${data.length} MANO(S) DETECTADA(S) · haz pinza para agarrar · usa ambas para escalar y girar`;
+     status.textContent=hands.length+" MANO(S) DETECTADA(S) · pinza para agarrar; dos pinzas para ampliar y girar";
      prevSingle=null;
     }
     twoBase=null;
    }
-  },30);
+  }
+  frame();
   $("#handBtn").classList.add("active");$("#handBtn").textContent="✋ Desactivar seguimiento";
-  toast("Seguimiento activo: el simulador está leyendo hasta dos manos.");
+  toast("Seguimiento mejorado: detección suavizada y pinza más estable.");
  }catch(err){
   console.error(err);stopHands();
   toast("No se pudo iniciar el seguimiento. Revisa el permiso de cámara e inténtalo de nuevo.");
