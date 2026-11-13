@@ -257,46 +257,82 @@ function stopHands(){
  const video=$("#cameraVideo");if(video)video.srcObject=null;
  $("#handOverlay").classList.add("hidden");document.querySelectorAll("#handCursor, #handCursor2").forEach(e=>e.remove());document.querySelectorAll("#xrScene > a-sphere").forEach(e=>{if(e.getAttribute("radius")===".075")e.remove()});$("#handBtn").classList.remove("active");$("#handBtn").textContent="✋ Activar cámara y manos";
 }
-async function checkAR(){
- const btn=$("#arBtn"),scene=$("#xrScene"),video=$("#arCameraVideo"),wrap=$("#sceneWrap");
+function prepareARRenderer(){
+ const scene=$("#xrScene");
+ if(!scene?.renderer)throw new Error("El escenario 3D todavía no está listo. Sal del laboratorio y vuelve a entrar.");
+ if(arOriginalBackground===null)arOriginalBackground=scene.getAttribute("background")||{color:"#08172c"};
+ scene.removeAttribute("background");
+ scene.renderer.setClearColor(0x000000,0);
+ scene.renderer.setClearAlpha(0);
+ scene.renderer.domElement.style.background="transparent";
+}
+function activateCameraFallback(){
+ const btn=$("#arBtn"),video=$("#arCameraVideo"),wrap=$("#sceneWrap");
+ return navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}})
+  .catch(error=>{
+   if(error.name==="OverconstrainedError"||error.name==="NotFoundError")return navigator.mediaDevices.getUserMedia({audio:false,video:true});
+   throw error;
+  }).then(async stream=>{
+   arCameraStream=stream;video.srcObject=stream;video.classList.remove("hidden");
+   await video.play();wrap.classList.add("camera-ar-active");arModeActive=true;
+   btn.disabled=false;btn.classList.add("active");btn.textContent="Salir de AR";
+   $("#sceneHint").textContent="MODO CÁMARA · modelos 3D superpuestos sobre la imagen real (sin anclaje espacial)";
+   toast("Cámara activada. Los modelos 3D se muestran sobre la imagen real.");
+  });
+}
+function checkAR(){
+ const btn=$("#arBtn"),scene=$("#xrScene");
  if(arModeActive){stopARMode();return}
  if(!window.isSecureContext){toast("La cámara y AR necesitan HTTPS. Abre la versión publicada en GitHub Pages.");return}
  btn.disabled=true;btn.textContent="Iniciando…";
+ try{prepareARRenderer()}catch(error){btn.disabled=false;btn.textContent="◉ Modo AR";toast(error.message);return}
+ // IMPORTANTE: enterAR se invoca directamente durante el clic del usuario.
+ // Esperar primero a isSessionSupported/loaded puede consumir la activación y
+ // hacer que Android rechace requestSession con NotAllowedError.
+ let arPromise;
  try{
-  await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
-  const renderer=scene.renderer;
-  if(!renderer)throw new Error("El escenario 3D todavía no está listo. Sal del laboratorio y vuelve a entrar.");
-  arOriginalBackground=scene.getAttribute("background")||{color:"#08172c"};
-  scene.removeAttribute("background");renderer.setClearColor(0x000000,0);renderer.setClearAlpha(0);renderer.domElement.style.background="transparent";
-  let immersiveSupported=false;
-  if(navigator.xr?.isSessionSupported){try{immersiveSupported=await navigator.xr.isSessionSupported("immersive-ar")}catch(error){console.info("WebXR AR no disponible:",error)}}
-  if(immersiveSupported){
-   const session=await navigator.xr.requestSession("immersive-ar",{optionalFeatures:["local-floor","hit-test","dom-overlay"],domOverlay:{root:document.body}});
-   try{renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType("local");await renderer.xr.setSession(session)}catch(error){try{await session.end()}catch(_){}throw error}
-   arSession=session;arModeActive=true;video.classList.add("hidden");btn.disabled=false;btn.classList.add("active");btn.textContent="Salir de AR";
-   $("#sceneHint").textContent="AR INMERSIVA ACTIVA · mueve el dispositivo para explorar el entorno";toast("Realidad aumentada inmersiva activada.");
-   session.addEventListener("end",()=>{if(arSession===session){arSession=null;restoreARScene()}},{once:true});return;
+  if(typeof scene.enterAR!=="function")throw new Error("La versión de A-Frame no ofrece entrada WebXR AR.");
+  arPromise=scene.enterAR();
+ }catch(error){arPromise=Promise.reject(error)}
+ Promise.resolve(arPromise).then(()=>{
+  arModeActive=true;arSession=scene.xrSession||null;
+  $("#sceneHint").textContent="REALIDAD AUMENTADA INMERSIVA ACTIVA · mueve el dispositivo para explorar";
+  btn.disabled=false;btn.classList.add("active");btn.textContent="Salir de AR";
+  toast("Realidad aumentada inmersiva activada.");
+ }).catch(async error=>{
+  console.warn("WebXR AR no pudo iniciarse; se intentará modo cámara:",error);
+  try{
+   if(!navigator.mediaDevices?.getUserMedia)throw new Error("Este navegador no permite acceder a la cámara. Prueba Chrome actualizado en Android.");
+   await activateCameraFallback();
+  }catch(cameraError){
+   console.error("No se pudo iniciar AR ni cámara:",cameraError);
+   restoreARScene();btn.disabled=false;btn.classList.remove("active");btn.textContent="◉ Modo AR";
+   const message=cameraError.name==="NotAllowedError"?"Permite el acceso a la cámara para este sitio desde los ajustes del navegador.":cameraError.name==="NotFoundError"?"No se encontró una cámara disponible.":cameraError.name==="NotReadableError"?"La cámara está siendo utilizada por otra aplicación.":cameraError.message||"No fue posible activar la realidad aumentada.";
+   toast(message);
   }
-  if(!navigator.mediaDevices?.getUserMedia)throw new Error("Este navegador no permite acceder a la cámara. Prueba una versión reciente de Chrome o Edge.");
-  try{arCameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}})}
-  catch(cameraError){if(cameraError.name==="OverconstrainedError"||cameraError.name==="NotFoundError")arCameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:1280},height:{ideal:720}}});else throw cameraError}
-  video.srcObject=arCameraStream;video.classList.remove("hidden");await video.play();wrap.classList.add("camera-ar-active");arModeActive=true;
-  btn.disabled=false;btn.classList.add("active");btn.textContent="Salir de AR";$("#sceneHint").textContent="MODO CÁMARA · los modelos 3D aparecen superpuestos sobre la imagen del entorno";toast("Modo cámara activado. Los modelos 3D se muestran sobre la imagen real.");
- }catch(error){
-  console.error("Inicio de AR/cámara:",error);if(arCameraStream){arCameraStream.getTracks().forEach(track=>track.stop());arCameraStream=null}
-  video.pause();video.srcObject=null;video.classList.add("hidden");restoreARScene();btn.disabled=false;btn.classList.remove("active");btn.textContent="◉ Modo AR";
-  const message=error.name==="NotAllowedError"?"No se concedió permiso para usar la cámara. Permítelo en el navegador y vuelve a intentarlo.":error.name==="NotFoundError"?"No se encontró una cámara disponible en este dispositivo.":error.name==="NotReadableError"?"La cámara está siendo utilizada por otra aplicación. Ciérrala e inténtalo de nuevo.":error.message||"No fue posible activar la cámara.";toast(message);
- }
+ });
 }
 function restoreARScene(){
  const scene=$("#xrScene"),video=$("#arCameraVideo"),wrap=$("#sceneWrap"),btn=$("#arBtn");
  if(arCameraStream){arCameraStream.getTracks().forEach(track=>track.stop());arCameraStream=null}
  if(video){video.pause();video.srcObject=null;video.classList.add("hidden")}
  wrap?.classList.remove("camera-ar-active");
- if(scene?.renderer){try{scene.renderer.xr.enabled=false;scene.renderer.setClearColor(0x08172c,1);scene.renderer.setClearAlpha(1);scene.renderer.domElement.style.background=""}catch(error){console.warn("No se pudo restaurar el escenario",error)}}
+ if(scene?.renderer){try{scene.renderer.setClearColor(0x08172c,1);scene.renderer.setClearAlpha(1);scene.renderer.domElement.style.background=""}catch(error){console.warn("No se pudo restaurar el escenario",error)}}
  if(scene)scene.setAttribute("background",arOriginalBackground||"color: #08172c");
- arModeActive=false;arSession=null;if(btn){btn.disabled=false;btn.classList.remove("active");btn.textContent="◉ Modo AR"}
+ arModeActive=false;arSession=null;
+ if(btn){btn.disabled=false;btn.classList.remove("active");btn.textContent="◉ Modo AR"}
  if($("#sceneHint"))$("#sceneHint").textContent="Tus manos físicas interactúan directamente con los modelos virtuales: apunta, sujeta, mueve, gira y amplía";
 }
-function stopARMode(){const session=arSession;if(session){try{session.end()}catch(error){console.warn("No se pudo cerrar la sesión AR",error)}}restoreARScene();toast("Modo AR desactivado.")}
+function stopARMode(){
+ const scene=$("#xrScene");
+ if(scene?.is("ar-mode")||scene?.is("vr-mode")){
+  scene.exitVR().catch(error=>console.warn("No se pudo cerrar la sesión AR:",error));
+ }
+ restoreARScene();toast("Modo AR desactivado.");
+}
+sceneARExitListener();
+function sceneARExitListener(){
+ const scene=$("#xrScene");
+ scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
+}
 $("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Girar y ampliar:</b> utiliza los controles del panel.</li><li><b>Manos físicas:</b> apunta a un modelo virtual; haz pinza para sujetarlo y arrastrarlo, abre la mano para girarlo y usa ambas manos para ampliar o reducir.</li><li><b>Exploración:</b> usa las herramientas del laboratorio para activar simulaciones.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
