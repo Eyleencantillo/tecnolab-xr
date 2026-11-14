@@ -23,12 +23,22 @@ function openLab(id){current=modules.find(m=>m.id===id);if(!current)return;$("#h
 function el(tag,attrs={},parent=world){const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
 function buildScene(){
  world.innerHTML="";
- // Escenario limpio: sin paredes, suelo, paneles, muebles ni plataformas.
- // Solo iluminación de estudio para destacar los modelos 3D.
- el("a-entity",{light:"type: ambient; color: #ffffff; intensity: 1.35",position:"0 3 2"});
- el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.9",position:"-3 6 4"});
- el("a-entity",{light:"type: point; color: #45d9ff; intensity: .85; distance: 12",position:"3 2 1"});
- el("a-entity",{light:"type: point; color: #ff9f43; intensity: .55; distance: 10",position:"-3 1 -2"});
+ // Un único plano continuo de laboratorio en 3D: no hay discos ni pedestales individuales.
+ // La superficie aporta escala, profundidad y referencia espacial a todos los modelos.
+ el("a-box",{position:"0 .47 -1",width:"18",height:".16",depth:"13",material:"shader: standard; color: #172d46; roughness: .78; metalness: .12"});
+ el("a-plane",{position:"0 .555 -1",rotation:"-90 0 0",width:"17.96",height:"12.96",material:"shader: standard; color: #203d59; roughness: .72; metalness: .16"});
+ // Líneas técnicas discretas integradas en el plano para dar profundidad y escala.
+ for(let x=-8;x<=8;x+=2){
+   el("a-box",{position:x+" .562 -1",width:".012",height:".006",depth:"12.8",material:"shader: standard; color: #4e7895; opacity: .22; transparent: true; roughness: 1"});
+ }
+ for(let z=-7;z<=5;z+=2){
+   el("a-box",{position:"0 .562 "+z,width:"17.8",height:".006",depth:".012",material:"shader: standard; color: #4e7895; opacity: .22; transparent: true; roughness: 1"});
+ }
+ // Iluminación de estudio: luz principal, relleno frío y acento cálido.
+ el("a-entity",{light:"type: ambient; color: #dceeff; intensity: 1.05",position:"0 3 2"});
+ el("a-entity",{light:"type: directional; color: #ffffff; intensity: 2.1; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048",position:"-3 7 4"});
+ el("a-entity",{light:"type: point; color: #45d9ff; intensity: 1.05; distance: 15",position:"3 3 1"});
+ el("a-entity",{light:"type: point; color: #ffad63; intensity: .72; distance: 12",position:"-4 2 -3"});
  current.items.forEach((item,i)=>createObject(item,i));
 }
 function createObject(item,i){
