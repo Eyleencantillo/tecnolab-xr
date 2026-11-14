@@ -378,3 +378,5 @@ footer{border-top-color:#72cbd62b}
 #modal .modal-card:has(.lab-preview-frame){width:min(760px,94vw);max-height:90vh;overflow:auto}
 #modal .modal-card:has(.lab-preview-frame) #modalOk{margin-top:10px}
 @media(max-width:700px){.lab-preview-frame{height:230px}.module-preview-hint{left:12px;bottom:11px}.module-card{padding-bottom:40px}}
+
+#labPreviewScene{pointer-events:none}
