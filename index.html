@@ -56,7 +56,7 @@
           <div class="scene-panel">
             <div class="scene-toolbar">
               <span class="scene-label"><i></i> ESCENARIO 3D</span>
-              <div class="scene-tools"><button id="handBtn" class="tool-btn">✋ Activar cámara y manos</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
+              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><button id="handBtn" class="tool-btn">✋ Activar cámara y manos</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
             </div>
             <div id="sceneWrap">\n              <video id="arCameraVideo" class="ar-camera-video hidden" autoplay playsinline muted aria-label="Vista de cámara para realidad aumentada"></video>
               <a-scene id="xrScene" embedded renderer="antialias: true; colorManagement: true; alpha: true" webxr="referenceSpaceType: local; requiredFeatures: ; optionalFeatures: hit-test, dom-overlay; overlayElement: #sceneWrap" vr-mode-ui="enabled: false" background="color: #08172c">
@@ -78,7 +78,7 @@
                 <div class="object-info-section"><b>¿PARA QUÉ SIRVE?</b><p id="infoPurpose"></p></div>
               </section>
               <div id="sceneHint" class="scene-hint">Apunta a un modelo y junta pulgar e índice para agarrarlo. Desplaza la mano y separa los dedos para soltarlo.</div>
-              <div class="scene-gesture-guide" aria-label="Instrucciones para mover las manos"><b>GUÍA DE GESTOS</b><span>🤏 <strong>Junta pulgar e índice:</strong> agarrar el modelo.</span><span>✋ <strong>Mantén la pinza:</strong> desplazar el objeto.</span><span>👌 <strong>Separa los dedos:</strong> soltar el objeto.</span><span>🖐️ <strong>Mano abierta:</strong> girar el objeto seleccionado.</span><small>Apunta directamente al modelo. Mantén la mano completa visible frente a la cámara.</small></div>
+              <div class="scene-gesture-guide" aria-label="Instrucciones para mover las manos"><b>GUÍA DE GESTOS</b><span>🤏 <strong>Junta pulgar e índice:</strong> agarrar el modelo.</span><span>✋ <strong>Mantén la pinza:</strong> desplazar el objeto.</span><span>👌 <strong>Separa los dedos:</strong> soltar el objeto.</span><span>🖐️ <strong>Una mano abierta:</strong> girar el objeto seleccionado.</span><span>🙌 <strong>Dos manos abiertas:</strong> sepáralas para ampliar y acércalas para reducir.</span><small>Para el zoom, mantén ambas manos completas visibles frente a la cámara.</small></div>
               <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
             </div>
             <div class="scene-footer"><span>INTERACCIÓN PRINCIPAL: GESTOS CON LAS MANOS</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
