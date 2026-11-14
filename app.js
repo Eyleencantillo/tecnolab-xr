@@ -212,7 +212,7 @@ async function startHands(){
   function objectUnderHand(p){
    if(!scene.camera)return null;
    // La vista previa de la cámara está espejada para que el movimiento resulte natural.
-   handPointer.set((1-p.x)*2-1,(1-p.y)*-2+1);
+   handPointer.set((1-p.x)*2-1,1-p.y*2);
    handRaycaster.setFromCamera(handPointer,scene.camera);
    const roots=[...world.querySelectorAll(".interactive")].map(el=>el.object3D).filter(Boolean);
    const hits=handRaycaster.intersectObjects(roots,true);
