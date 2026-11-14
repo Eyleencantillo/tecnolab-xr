@@ -176,3 +176,69 @@ footer{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-cont
  .learn-card p{font-size:10px}
  .hero-lab-visual:after{font-size:7px;letter-spacing:1.3px}
 }
+
+/* PANEL DE EXPLORACIÓN: jerarquía visual y controles agrupados. */
+.control-panel{
+ padding:16px;
+ background:linear-gradient(155deg,#102944 0%,#0b1c32 55%,#0a192d 100%);
+ border:1px solid #68cce733;
+ box-shadow:0 14px 34px #020a1680,inset 0 1px #ffffff0a;
+ display:flex;flex-direction:column;gap:13px
+}
+.panel-title{position:relative;gap:11px;padding:2px 0 14px;border-bottom:1px solid #6ccbe629}
+.panel-title-icon{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#164b69,#26366a);border:1px solid #67dfff66;color:#8cefff!important;font-size:23px!important}
+.panel-title b{font-size:14px;letter-spacing:.1px}
+.panel-title small{font-size:9px;color:#9db9cf}
+.panel-live{margin-left:auto;align-self:flex-start;padding:5px 7px;border-radius:20px;background:#55e6bd16;color:#8cf5d1;font-size:7px;font-weight:800;letter-spacing:1px}
+.panel-live i{display:inline-block;width:5px;height:5px;margin-right:4px;border-radius:50%;background:#55e6bd;box-shadow:0 0 8px #55e6bd}
+.explore-object-card{padding:13px;border:1px solid #51e5ff45;border-radius:13px;background:linear-gradient(135deg,#123a55,#152c4c 75%,#20284d);box-shadow:inset 0 1px #ffffff0b}
+.explore-section-kicker{display:flex;align-items:center;gap:8px;font-size:8px;font-weight:800;letter-spacing:1.3px;color:#8edff5}
+.explore-section-kicker span{display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:#51e5ff20;color:#9cf1ff;font:700 10px 'Space Grotesk'}
+.explore-object-card .selected-card{margin:12px 0 8px;gap:10px}
+.explore-object-card .selected-icon{width:43px;height:43px;background:linear-gradient(145deg,#1b5a73,#273a70);border:1px solid #6ee6ff55;color:#a6f4ff;font-size:23px}
+.explore-object-card .selected-card small{font-size:7px;letter-spacing:1.1px;color:#91b8cf}
+.explore-object-card .selected-card b{font:600 13px 'Space Grotesk';color:#f3fbff}
+.explore-object-card .panel-description{min-height:0;margin:0;padding-top:9px;border-top:1px solid #ffffff17;font-size:9px;line-height:1.55;color:#b4ccdc}
+.panel-section{padding:12px;border:1px solid #ffffff16;border-radius:12px;background:#ffffff06}
+.panel-section-heading{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.panel-step-icon{flex:0 0 31px;width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#51e5ff19;color:#80eaff;font-size:16px}
+.panel-step-icon.tools-icon{background:#b49aff1b;color:#c4aaff}
+.panel-step-icon.hand-icon{background:#55e6bd1b;color:#83f1cb}
+.panel-section-heading b,.panel-section-heading small{display:block}
+.panel-section-heading b{font:700 11px 'Space Grotesk';color:#edf8ff}
+.panel-section-heading small{font-size:8px;color:#91abc0;margin-top:3px}
+.panel-section .control-group{padding:0;border:0}
+.panel-section .control-row{gap:8px;margin-bottom:7px}
+.panel-section .control-row button,.panel-section .wide-btn,.panel-section .action-buttons button{
+ min-height:35px;border:1px solid #75b8d42b;border-radius:8px;
+ background:linear-gradient(145deg,#183752,#142943);color:#d7e9f6;
+ font-size:9px;font-weight:600;transition:transform .16s,border-color .16s,background .16s
+}
+.panel-section .control-row button span,.panel-section .wide-btn span{color:#78eaff;font-size:14px;vertical-align:-1px;margin-right:3px}
+.panel-section .control-row button:hover,.panel-section .wide-btn:hover,.panel-section .action-buttons button:hover{
+ transform:translateY(-1px);border-color:#65e3ff;background:linear-gradient(145deg,#1a4962,#1a3454);color:#fff
+}
+.panel-section .wide-btn{width:100%;background:#123b48;border-color:#55e6bd44;color:#bdf8e8}
+.panel-section .wide-btn span{color:#75f0c8}
+.panel-section .action-buttons{grid-template-columns:1fr 1fr;gap:7px}
+.panel-section .action-buttons button{padding:9px 8px;text-align:center;line-height:1.35}
+.panel-section .action-buttons button:before{content:"✦";display:inline-block;margin-right:5px;color:#78eaff;font-size:9px}
+.hand-tips-section{background:linear-gradient(140deg,#103b42aa,#10263d);border-color:#55e6bd33}
+.hand-tips-section .gesture-guide{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0;margin:0;background:none;border:0}
+.hand-tips-section .gesture-guide span{display:flex;align-items:center;gap:6px;padding:7px 6px;border:1px solid #ffffff13;border-radius:8px;background:#061b2b77;font-size:8px;line-height:1.35;color:#cce1ed}
+.hand-tips-section .gesture-guide span b{font-size:13px}
+.tip-box{margin-top:0;padding:11px 12px;background:linear-gradient(110deg,#163b4b,#152a43);border-color:#55e6bd33}
+.tip-box>span{font-size:17px;color:#7df0c8}
+.tip-box b{font-size:9px;color:#b9ffe8}
+.tip-box p{font-size:8px;line-height:1.5;color:#a9c4d3}
+@media(max-width:1000px){
+ .control-panel{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:11px}
+ .panel-title,.explore-object-card,.tip-box{grid-column:1/-1}
+ .panel-section{min-width:0}
+}
+@media(max-width:650px){
+ .control-panel{display:flex;gap:10px;padding:12px}
+ .panel-title{width:100%}
+ .panel-section{padding:11px}
+ .hand-tips-section .gesture-guide span{font-size:8px}
+}
