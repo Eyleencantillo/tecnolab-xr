@@ -114,10 +114,10 @@ function createObject(item,i){
    if(i===0)part("a-box",{width:".65",height:".38",depth:".35",color:"#3273b7"});
    else if(i===1){part("a-box",{width:".42",height:".12",depth:".12",color:"#d6b45c"});for(let n=0;n<4;n++)part("a-box",{position:`${-.15+n*.1} .09 0`,width:".035",height:".08",depth:".12",color:"#d6b45c"});}
    else if(i===2){part("a-box",{width:".4",height:".12",depth:".28",color:"#303d4d"});part("a-cylinder",{position:"0 .13 0",radius:".08",height:".2",color:"#55e6bd"});}
-   else{part("a-sphere",{radius:".2",color:"#ffe36a",material:"emissive: #9c7a20; emissiveIntensity: .4"});part("a-cylinder",{position:"0 -.22 0",radius:".13",height:".12",color:"#9aa8b8"});}
+   else{part("a-sphere",{radius:".2",color:"#ffe36a",material:"emissive: #9c7a20; emissiveIntensity: .4"});part("a-box",{position:"0 -.22 0",width:".22",height:".12",depth:".2",color:"#9aa8b8"});}
  }else if(current.id==="sistemas"||current.id==="programacion"||current.id==="ciberseguridad"){
    part("a-box",{width:".8",height:".58",depth:".09",color:"#253c59"});part("a-plane",{position:"0 0 .06",width:".68",height:".44",color:hue});for(let n=0;n<3;n++)part("a-box",{position:`0 ${.12-n*.12} .075`,width:".42",height:".025",depth:".015",color:"#d8f4ff"});
-   part("a-cylinder",{position:"0 -.42 0",radius:".06",height:".28",color:"#8399b0"});part("a-box",{position:"0 -.56 0",width:".55",height:".07",depth:".25",color:"#52677e"});
+   part("a-box",{position:"0 -.42 0",width:".1",height:".28",depth:".1",color:"#8399b0"});part("a-box",{position:"0 -.56 0",width:".55",height:".07",depth:".25",color:"#52677e"});
  }else if(current.id==="impresion"){
    part("a-box",{width:".85",height:".75",depth:".12",color:"#54667b",material:"wireframe: true"});part("a-box",{position:"0 -.25 0",width:".62",height:".06",depth:".48",color:"#278e8b"});part("a-cone",{position:"0 .05 0",radiusBottom:".15",radiusTop:".04",height:".28",color:"#bd7c42"});
  }else if(current.id==="ia"){
