@@ -195,8 +195,7 @@ function createObject(item,i){
  }else{
    box("0 0 0",.72,.5,.42,c);box("0 .29 0",.4,.08,.3,"#eaf4fb");box("0 -.3 0",.3,.08,.2,"#263b55");
  }
- // Etiqueta discreta, separada del modelo y sin discos ni plataformas decorativas.
- txt(item[0],"0 -.72 .02",3.2,"#f4f8ff");
+ // El nombre se muestra únicamente al seleccionar el objeto, en su panel de información.
  g.addEventListener("click",()=>selectObject(g,item));
  g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.045 1.045 1.045; dur: 180")});
  g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")});
