@@ -18,8 +18,7 @@ footer{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-cont
 #handBtn.active{background:#164b52;border-color:var(--green);color:var(--green)}
 @media(max-width:650px){.hand-overlay{width:132px;height:100px}.gesture-guide span{font-size:9px}}
 
-/* La manipulación de los modelos se realiza con seguimiento de manos. */
-.control-panel .control-group:has(#rotateLeft){display:none}
+/* Los controles de giro y escala permanecen visibles como alternativa al seguimiento de manos. */
 
 /* Modo AR: cámara real detrás del escenario 3D transparente. */
 #sceneWrap.camera-ar-active{background:#000}
@@ -41,3 +40,8 @@ footer{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-cont
 .lab-avatar{filter:drop-shadow(0 8px 8px #0007)}
 #xrScene a-entity.interactive{transition:filter .2s}
 #xrScene a-entity.interactive:hover{filter:drop-shadow(0 0 12px #51e5ff66)}
+
+/* Controles de cámara y acabado visual más vivo. */
+#sceneWrap{background:radial-gradient(ellipse at 50% 42%,#1b5270 0%,#123552 48%,#071326 100%)}
+#sceneZoomIn,#sceneZoomOut{border-color:#55e6bd66;color:#cffff0}
+#sceneZoomIn:hover,#sceneZoomOut:hover{background:#155447;border-color:#55e6bd;color:#fff}
