@@ -55,42 +55,8 @@ function buildScene(){
  el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.55",position:"-3 6 4"});
  el("a-entity",{light:"type: point; color: #51dfff; intensity: .8; distance: 11",position:"3 3 1"});
  el("a-entity",{light:"type: point; color: #ffb76b; intensity: .42; distance: 9",position:"-3 2 -2"});
- // Dos avatares se ubican directamente sobre el suelo, sin círculos ni pedestales decorativos.
- addAvatar(-4.25, "Guía de laboratorio", "guide");
- addAvatar(4.25, "Explorador XR", "explorer");
+ // Los objetos del laboratorio se conservan sin personajes decorativos.
  current.items.forEach((item,i)=>createObject(item,i));
-}
-function addAvatar(x,label,variant){
- // Modelos humanos GLB de Innerscene, adaptados de MakeHuman y publicados
- // bajo dedicación CC0. Las fichas y licencias se documentan en README.md.
- const avatar=el("a-entity",{position:`${x} 0 .9`,class:"lab-avatar"});
- const modelUrls={
-   guide:"https://files.innerscene.com/library/amara-3d-person-standing-office-2a16c294/bc0b8cf6d7fb55755f82/amara-woman.glb",
-   explorer:"https://files.innerscene.com/library/daniel-3d-person-standing-casual-f788af5a/9e300a9cc460f5e7c2d7/daniel-man.glb"
- };
- const accent=variant==="guide"?"#55e6bd":"#51e5ff";
- // El personaje queda integrado al suelo: sin círculo, aro ni pedestal bajo los pies.
- const model=el("a-entity",{position:"0 0 0",rotation:"0 180 0",scale:".92 .92 .92","gltf-model":modelUrls[variant]},avatar);
- const status=el("a-text",{value:"Cargando avatar 3D…",align:"center",color:"#d9f6ff",width:"2.8",position:"0 1.82 0",class:"avatar-loading"},avatar);
- model.addEventListener("model-loaded",()=>{
-   status.setAttribute("visible","false");
-   // Los GLB están modelados a escala real (aprox. 1.68–1.79 m).
-   // Se aplica una reducción uniforme moderada para integrarlos en la escena.
-   model.setAttribute("scale",".92 .92 .92");
-   toast(`${label} listo para explorar.`);
- });
- model.addEventListener("model-error",event=>{
-   console.error("No se pudo cargar el avatar:",label,event.detail||"Error GLB");
-   status.setAttribute("value","No se pudo cargar el modelo 3D");
-   status.setAttribute("color","#ffb4a2");
- });
- // Informa si el archivo tarda, sin bloquear el resto del laboratorio.
- setTimeout(()=>{
-   if(!model.hasLoaded&&status.isConnected&&status.getAttribute("visible")!==false){
-     status.setAttribute("value","El avatar está tardando en cargar…");
-   }
- },12000);
- el("a-text",{value:label,align:"center",color:"#d9f6ff",width:"2.8",position:"0 2.02 0"},avatar);
 }
 function createObject(item,i){
  const x=(i-(current.items.length-1)/2)*1.45;
