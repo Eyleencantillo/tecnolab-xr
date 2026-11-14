@@ -23,16 +23,41 @@ function openLab(id){current=modules.find(m=>m.id===id);if(!current)return;$("#h
 function el(tag,attrs={},parent=world){const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
 function buildScene(){
  world.innerHTML="";
- el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"10",height:"8",color:"#0b2540",material:"roughness: 1"});
- el("a-grid",{position:"0 .018 0",rotation:"-90 0 0",width:"10",height:"8",color:"#245274",opacity:".45"});
+ // Suelo continuo y arquitectura del laboratorio: se elimina la apariencia de escenario vacío.
+ el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"11.5",height:"9",color:"#102c45",material:"roughness: .82"});
+ el("a-plane",{position:"0 3.1 -4.35",width:"11.5",height:"6.2",color:"#10243b",material:"roughness: .9"});
+ el("a-plane",{position:"-5.72 2.8 0",rotation:"0 90 0",width:"8.8",height:"5.6",color:"#0b2036"});
+ el("a-plane",{position:"5.72 2.8 0",rotation:"0 -90 0",width:"8.8",height:"5.6",color:"#0b2036"});
+ // Paneles arquitectónicos, ventanales y líneas de luz en la pared posterior.
+ for(let i=0;i<5;i++){
+   const x=-4.55+i*2.27;
+   el("a-box",{position:`${x} 2.55 -4.22`,width:"2.08",height:"4.75",depth:".08",color:i%2?"#173b59":"#14334f",material:"roughness:.72"});
+   el("a-box",{position:`${x} 4.92 -4.14`,width:"1.55",height:".035",depth:".025",color:i%2?"#51e5ff":"#55e6bd",material:"emissive: #248da8; emissiveIntensity:.45"});
+ }
+ // Pantalla técnica central que da identidad visual al espacio.
+ el("a-box",{position:"0 3.35 -4.02",width:"3.35",height:"1.62",depth:".16",color:"#07182b",material:"metalness:.35; roughness:.3"});
+ el("a-plane",{position:"0 3.35 -3.925",width:"3.12",height:"1.4",color:"#123e5a",material:"emissive:#0b3550; emissiveIntensity:.25"});
+ el("a-text",{value:"TECNOLAB  /  XR",position:"0 3.52 -3.89",align:"center",color:"#8cecff",width:"4.2"});
+ el("a-text",{value:"LABORATORIO INTERACTIVO",position:"0 3.19 -3.89",align:"center",color:"#d5eaf5",width:"3.2"});
+ // Marcos de iluminación superior y luminarias.
+ for(let i=0;i<4;i++){
+   el("a-box",{position:`${-3.6+i*2.4} 5.85 -1.4`,width:"1.45",height:".045",depth:".22",color:"#51e5ff",material:"emissive:#51e5ff; emissiveIntensity:.65"});
+ }
+ el("a-grid",{position:"0 .012 0",rotation:"-90 0 0",width:"11.5",height:"9",color:"#3b7794",opacity:".22"});
+ // Módulos laterales bajos para que el espacio se perciba como un laboratorio equipado.
+ for(const x of [-4.65,4.65]){
+   el("a-box",{position:`${x} .52 -1.9`,width:".82",height:"1.04",depth:"2.2",color:"#173b58",material:"roughness:.55; metalness:.22"});
+   el("a-box",{position:`${x} 1.06 -1.9`,width:".9",height:".08",depth:"2.28",color:"#287b9b",material:"metalness:.35; roughness:.3"});
+   for(let n=0;n<3;n++)el("a-box",{position:`${x} ${.3+n*.2} -.92`,width:".035",height:".07",depth:".035",color:n===1?"#55e6bd":"#51e5ff",material:"emissive:#1689a9; emissiveIntensity:.4"});
+ }
  // Iluminación de estudio para dar volumen y reflejos a los modelos.
- el("a-entity",{light:"type: ambient; color: #dceeff; intensity: 1.05",position:"0 4 0"});
- el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.35",position:"-3 6 4"});
- el("a-entity",{light:"type: point; color: #51dfff; intensity: .65; distance: 9",position:"3 2 1"});
- el("a-entity",{light:"type: point; color: #ffb76b; intensity: .35; distance: 8",position:"-3 2 -2"});
- // Dos avatares guía acompañan la exploración en el laboratorio.
- addAvatar(-3.8, "Guía de laboratorio", "guide");
- addAvatar(3.8, "Explorador XR", "explorer");
+ el("a-entity",{light:"type: ambient; color: #dceeff; intensity: 1.15",position:"0 4 0"});
+ el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.55",position:"-3 6 4"});
+ el("a-entity",{light:"type: point; color: #51dfff; intensity: .8; distance: 11",position:"3 3 1"});
+ el("a-entity",{light:"type: point; color: #ffb76b; intensity: .42; distance: 9",position:"-3 2 -2"});
+ // Dos avatares se ubican directamente sobre el suelo, sin círculos ni pedestales decorativos.
+ addAvatar(-4.25, "Guía de laboratorio", "guide");
+ addAvatar(4.25, "Explorador XR", "explorer");
  current.items.forEach((item,i)=>createObject(item,i));
 }
 function addAvatar(x,label,variant){
@@ -44,8 +69,7 @@ function addAvatar(x,label,variant){
    explorer:"https://files.innerscene.com/library/daniel-3d-person-standing-casual-f788af5a/9e300a9cc460f5e7c2d7/daniel-man.glb"
  };
  const accent=variant==="guide"?"#55e6bd":"#51e5ff";
- el("a-circle",{position:"0 .025 0",rotation:"-90 0 0",radius:".48",color:accent,opacity:".2",material:"transparent: true; shader: flat"},avatar);
- el("a-torus",{position:"0 .035 0",rotation:"90 0 0",radius:".43",radiusTubular:".012",color:accent,material:"emissive: #1689a9; emissiveIntensity: .35"},avatar);
+ // El personaje queda integrado al suelo: sin círculo, aro ni pedestal bajo los pies.
  const model=el("a-entity",{position:"0 0 0",rotation:"0 180 0",scale:".92 .92 .92","gltf-model":modelUrls[variant]},avatar);
  const status=el("a-text",{value:"Cargando avatar 3D…",align:"center",color:"#d9f6ff",width:"2.8",position:"0 1.82 0",class:"avatar-loading"},avatar);
  model.addEventListener("model-loaded",()=>{
