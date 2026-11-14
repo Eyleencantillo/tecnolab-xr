@@ -70,6 +70,13 @@
                 <a-entity light="type: ambient; intensity: 1.15"></a-entity>
                 <a-entity light="type: directional; intensity: 1.8" position="-3 6 4"></a-entity>
               </a-scene>
+              <div id="handPointer" class="hand-pointer hidden" aria-hidden="true"><span></span></div>
+              <section id="objectInfoTab" class="object-info-tab hidden" aria-live="polite">
+                <button id="closeObjectInfo" class="object-info-close" aria-label="Cerrar ficha">×</button>
+                <div class="object-info-heading"><span id="infoObjectIcon">◇</span><div><small>FICHA DEL OBJETO</small><h3 id="infoObjectName">Objeto seleccionado</h3></div></div>
+                <div class="object-info-section"><b>¿QUÉ ES?</b><p id="infoWhat"></p></div>
+                <div class="object-info-section"><b>¿PARA QUÉ SIRVE?</b><p id="infoPurpose"></p></div>
+              </section>
               <div id="sceneHint" class="scene-hint">Apunta a un modelo y junta pulgar e índice para agarrarlo. Desplaza la mano y separa los dedos para soltarlo.</div>
               <div class="scene-gesture-guide" aria-label="Instrucciones para mover las manos"><b>GUÍA DE GESTOS</b><span>🤏 <strong>Junta pulgar e índice:</strong> agarrar el modelo.</span><span>✋ <strong>Mantén la pinza:</strong> desplazar el objeto.</span><span>👌 <strong>Separa los dedos:</strong> soltar el objeto.</span><span>🖐️ <strong>Mano abierta:</strong> girar el objeto seleccionado.</span><small>Apunta directamente al modelo. Mantén la mano completa visible frente a la cámara.</small></div>
               <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
