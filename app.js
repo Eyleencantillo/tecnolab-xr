@@ -206,7 +206,7 @@ async function startHands(){
   }
   function setGesture(next){
    if(next===candidate)candidateFrames++;else{candidate=next;candidateFrames=1}
-   if(candidateFrames>=3&&gesture!==candidate){gesture=candidate;anchor=null;previousPoint=null}
+   if(candidateFrames>=3&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null}
   }
   const handRaycaster=new T.Raycaster(),handPointer=new T.Vector2();
   function objectUnderHand(p){
