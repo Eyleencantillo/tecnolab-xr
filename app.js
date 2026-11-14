@@ -276,6 +276,7 @@ function selectObject(g,item){
 function buildActions(){const box=$("#actionButtons");box.innerHTML="";current.actions.forEach((a,i)=>{const b=document.createElement("button");b.textContent=a;b.addEventListener("click",()=>runAction(i));box.appendChild(b)})}
 function runAction(i){const id=current.id;if(id==="hardware"&&i===0){world.querySelectorAll("a-torus").forEach((e,j)=>e.setAttribute("color",j<3?"#55e6bd":"#51e5ff"));toast("Conexiones principales resaltadas.");}
 else if(id==="hardware"&&i===1){world.querySelectorAll(".interactive").forEach((e,j)=>e.setAttribute("position",`${(j%3-1)*2.3} ${1+(j%2)*.3} ${Math.floor(j/3)*-1.1}`));toast("Componentes separados para su inspección.");}
+else if(id==="hardware"&&i===2){simulateHardwareBoot();}
 else if(id==="redes"&&i===0){drawConnections();toast("Conexiones virtuales creadas.");}
 else if(id==="redes"&&i===1){animatePackets();toast("Paquetes de datos recorriendo la red (simulación).");}
 else if(id==="robotica"&&i===0){const r=world.querySelector(".interactive");r?.setAttribute("animation__move","property: position; to: 1 1.1 -1; dur: 1200; dir: alternate; loop: 2");toast("Secuencia de movimiento ejecutada.");}
@@ -289,6 +290,21 @@ else if(id==="arvr"&&i===2){checkAR();}
 else if(id==="impresion"&&i===0){const obj=world.querySelector(".interactive");obj?.setAttribute("animation__print","property: scale; from: .2 .2 .2; to: 1 1 1; dur: 3000");toast("Impresión demostrativa iniciada.");}
 else{toast("Acción ejecutada: "+current.actions[i]+".");}
 $("#progressBar").style.width=(i===2?"100%":"60%");missionAction(i)}
+function simulateHardwareBoot(){
+ const parts=[...world.querySelectorAll(".interactive")];
+ if(!parts.length){toast("No se encontraron componentes para iniciar la simulación.");return}
+ toast("Encendido iniciado: comprobando componentes…");
+ parts.forEach((part,index)=>{
+  part.removeAttribute("animation__power");
+  part.setAttribute("animation__power",`property: scale; from: 1 1 1; to: 1.16 1.16 1.16; dur: 420; delay: ${index*260}; dir: alternate; loop: 2; easing: easeInOutSine`);
+ });
+ const indicator=el("a-sphere",{position:"0 2.05 -0.15",radius:".09",color:"#55e6bd",material:"emissive: #55e6bd; emissiveIntensity: 1.2"});
+ indicator.setAttribute("animation","property: material.emissiveIntensity; from: .15; to: 1.8; dur: 420; dir: alternate; loop: 5");
+ setTimeout(()=>{
+  indicator.setAttribute("color","#55e6bd");
+  toast("✓ Equipo encendido: componentes activos y sistema listo (simulación educativa).");
+ },2100);
+}
 function drawConnections(){const points=[-1.65,0,1.65];for(let i=0;i<2;i++){const line=el("a-cylinder",{position:`${(points[i]+points[i+1])/2} 1.1 0`,radius:".025",height:"1.65",rotation:"0 0 90",color:"#55e6bd"});line.setAttribute("animation","property: material.emissive; from: #003322; to: #55e6bd; dur: 700; dir: alternate; loop: true")}}
 function animatePackets(){for(let i=0;i<5;i++){const p=el("a-sphere",{position:"-1.7 1.15 .1",radius:".07",color:"#55e6bd"});p.setAttribute("animation",`property: position; to: 1.7 1.15 .1; dur: ${1200+i*180}; delay: ${i*180}; loop: true`)}}
 function addProgramBlock(label){const b=el("a-box",{position:`${-1.7+Math.random()*3.4} 1.8 -1`,width:".8",height:".25",depth:".12",color:"#397cbe"});b.classList.add("program-block");el("a-text",{value:label,align:"center",color:"#ffffff",width:"2",position:"0 0 .08"},b);toast("Bloque agregado: "+label)}
