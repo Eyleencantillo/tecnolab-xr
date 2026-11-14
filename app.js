@@ -322,7 +322,7 @@ function stopHands(){
  if(handTask){handTask.close();handTask=null}
  if(handStream){handStream.getTracks().forEach(t=>t.stop());handStream=null}
  const video=$("#cameraVideo");if(video)video.srcObject=null;
- $("#handOverlay").classList.add("hidden");document.querySelectorAll("#handCursor, #handCursor2").forEach(e=>e.remove());document.querySelectorAll("#xrScene > a-sphere").forEach(e=>{if(e.getAttribute("radius")===".075")e.remove()});$("#handBtn").classList.remove("active");$("#handBtn").textContent="✋ Activar cámara y manos";
+ $("#handOverlay").classList.add("hidden");$("#handPointer")?.classList.add("hidden");document.querySelectorAll("#handCursor, #handCursor2").forEach(e=>e.remove());document.querySelectorAll("#xrScene > a-sphere").forEach(e=>{if(e.getAttribute("radius")===".075")e.remove()});$("#handBtn").classList.remove("active");$("#handBtn").textContent="✋ Activar cámara y manos";
 }
 function prepareARRenderer(){
  const scene=$("#xrScene");
