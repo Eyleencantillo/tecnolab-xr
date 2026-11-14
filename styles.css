@@ -364,3 +364,17 @@ footer{border-top-color:#72cbd62b}
 @media(prefers-reduced-motion:no-preference){
  .module-card,.learn-card,.tool-btn,.panel-section button{transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
 }
+
+
+/* Vista previa 3D de cada laboratorio */
+.module-card{padding-bottom:39px}
+.module-preview-hint{position:absolute;left:19px;bottom:15px;font-size:9px;font-weight:700;letter-spacing:.35px;color:#7cebd5;background:#143b49;border:1px solid #3ccdb477;border-radius:20px;padding:5px 9px}
+.module-card:hover .module-preview-hint{background:#1c5660;color:#d9fff7}
+.preview-intro>span{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1.6px;color:#67e8d0;background:#143d4b;border:1px solid #3ccdb477;border-radius:20px;padding:6px 10px}
+.preview-intro p,.preview-description{font-size:12px;line-height:1.6;color:#b6cadd}
+.lab-preview-frame{height:290px;position:relative;overflow:hidden;border:1px solid #55cde766;border-radius:15px;background:radial-gradient(ellipse at 50% 20%,#42678d,#132a48 75%,#09172b);box-shadow:inset 0 0 35px #4cccf522;margin:14px 0}
+#labPreviewScene{position:absolute!important;inset:0;width:100%;height:100%}
+.preview-caption{position:absolute;left:12px;right:12px;bottom:10px;padding:9px 12px;border-radius:9px;background:#071629d9;border:1px solid #6b9ab555;color:#e9f8ff;font-size:10px;letter-spacing:.3px;pointer-events:none}
+#modal .modal-card:has(.lab-preview-frame){width:min(760px,94vw);max-height:90vh;overflow:auto}
+#modal .modal-card:has(.lab-preview-frame) #modalOk{margin-top:10px}
+@media(max-width:700px){.lab-preview-frame{height:230px}.module-preview-hint{left:12px;bottom:11px}.module-card{padding-bottom:40px}}
