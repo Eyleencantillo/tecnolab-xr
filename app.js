@@ -24,9 +24,9 @@ function el(tag,attrs={},parent=world){const e=document.createElement(tag);Objec
 function buildScene(){
  world.innerHTML="";
  // Suelo continuo y arquitectura del laboratorio: se elimina la apariencia de escenario vacío.
- el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"11.5",height:"9",color:"#102c45",material:"roughness: .82"});
- el("a-plane",{position:"0 3.1 -4.35",width:"11.5",height:"6.2",color:"#10243b",material:"roughness: .9"});
- el("a-plane",{position:"-5.72 2.8 0",rotation:"0 90 0",width:"8.8",height:"5.6",color:"#0b2036"});
+ el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"11.5",height:"9",color:"#174363",material:"roughness: .82"});
+ el("a-plane",{position:"0 3.1 -4.35",width:"11.5",height:"6.2",color:"#123451",material:"roughness: .9"});
+ el("a-plane",{position:"-5.72 2.8 0",rotation:"0 90 0",width:"8.8",height:"5.6",color:"#10304a"});
  el("a-plane",{position:"5.72 2.8 0",rotation:"0 -90 0",width:"8.8",height:"5.6",color:"#0b2036"});
  // Paneles arquitectónicos, ventanales y líneas de luz en la pared posterior.
  for(let i=0;i<5;i++){
@@ -95,7 +95,7 @@ function addAvatar(x,label,variant){
 function createObject(item,i){
  const x=(i-(current.items.length-1)/2)*1.45;
  const g=el("a-entity",{position:`${x} 1.05 -.35`,class:"interactive", "data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."});
- const hue=["#1c82b8","#3476c9","#278e8b","#765fc2","#bd7c42","#368cae"][i%6];
+ const hue=["#18a9df","#5578f5","#21bfa3","#9b6cf2","#f09a43","#36c5df"][i%6];
  const part=(tag,attrs)=>el(tag,attrs,g);
  // Modelos 3D distintos según el contenido del laboratorio.
  if(current.id==="hardware"||current.id==="datos"){
@@ -161,6 +161,7 @@ function animatePackets(){for(let i=0;i<5;i++){const p=el("a-sphere",{position:"
 function addProgramBlock(label){const b=el("a-box",{position:`${-1.7+Math.random()*3.4} 1.8 -1`,width:".8",height:".25",depth:".12",color:"#397cbe"});b.classList.add("program-block");el("a-text",{value:label,align:"center",color:"#ffffff",width:"2",position:"0 0 .08"},b);toast("Bloque agregado: "+label)}
 function resetScene(){if(!current)return;$("#objectInfoTab").classList.add("hidden");buildScene();$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedLabel").textContent="Ningún objeto seleccionado";selectedEl=null;toast("Escenario reiniciado.")}
 function manipulate(type){if(!selectedEl){toast("Primero selecciona un objeto del escenario.");return}const rot=selectedEl.getAttribute("rotation"),sc=selectedEl.getAttribute("scale");if(type==="left")selectedEl.setAttribute("rotation",`${rot.x} ${rot.y-20} ${rot.z}`);if(type==="right")selectedEl.setAttribute("rotation",`${rot.x} ${rot.y+20} ${rot.z}`);if(type==="up")selectedEl.setAttribute("scale",`${Math.min(sc.x*1.18,2.8)} ${Math.min(sc.y*1.18,2.8)} ${Math.min(sc.z*1.18,2.8)}`);if(type==="down")selectedEl.setAttribute("scale",`${Math.max(sc.x/1.18,.35)} ${Math.max(sc.y/1.18,.35)} ${Math.max(sc.z/1.18,.35)}`);if(type==="center")selectedEl.setAttribute("position","0 1.1 0")}
+function zoomScene(direction){const camera=$("#xrScene")?.querySelector("[camera]");if(!camera)return;const position=camera.getAttribute("position");position.z=Math.min(11,Math.max(3.2,position.z+(direction>0?-.8:.8)));camera.setAttribute("position",position)}
 async function startHands(){
  if(handStream){stopHands();return}
  if(!navigator.mediaDevices?.getUserMedia){toast("Tu navegador no permite acceder a la cámara.");return}
@@ -176,7 +177,7 @@ async function startHands(){
   handTask=await vision.HandLandmarker.createFromOptions(files,options);
   const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene"),T=window.AFRAME?.THREE||window.THREE;
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
-  let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,grabAnchor=null,pinchActive=false,previousPoint=null;
+  let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,grabAnchor=null,pinchActive=false,previousPoint=null,twoHandZoomDistance=null;
   const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
   function center(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5}}
   function classify(lm){
@@ -282,6 +283,19 @@ async function startHands(){
    }
    const p=center(hands[0]),detected=classify(hands[0]);
    const pointer=$("#handPointer");if(pointer){pointer.style.left=((1-p.x)*100)+"%";pointer.style.top=(p.y*100)+"%";pointer.classList.remove("hidden");}
+   // Dos manos abiertas controlan el zoom del objeto seleccionado.
+   if(hands.length>=2&&selectedEl&&classify(hands[0])==="OPEN"&&classify(hands[1])==="OPEN"){
+    const a=center(hands[0]),b=center(hands[1]),distance=Math.hypot(a.x-b.x,a.y-b.y);
+    if(twoHandZoomDistance&&twoHandZoomDistance>.01){
+     const factor=T.MathUtils.clamp(distance/twoHandZoomDistance,.94,1.06);
+     const obj=selectedEl.object3D,next=T.MathUtils.clamp(obj.scale.x*factor,.35,4);
+     obj.scale.set(next,next,next);obj.updateMatrixWorld(true);
+    }
+    twoHandZoomDistance=distance;pinchActive=false;grabAnchor=null;previousPoint=null;
+    status.textContent="ZOOM CON DOS MANOS · sepáralas para ampliar y acércalas para reducir.";
+    return;
+   }
+   twoHandZoomDistance=null;
    setGesture(detected);
    if(detected==="PINCH"){
     if(!pinchActive){
@@ -402,4 +416,4 @@ function sceneARExitListener(){
  const scene=$("#xrScene");
  scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
 }
-$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
