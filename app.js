@@ -107,12 +107,12 @@ function createObject(item,i){
    else{part("a-box",{width:".72",height:".55",depth:".5",color:"#39485e"});part("a-box",{position:"0 .29 .02",width:".34",height:".035",depth:".03",color:"#55e6bd"});}
  }else if(current.id==="redes"){
    part("a-box",{width:".9",height:".35",depth:".55",color:hue});for(let n=0;n<5;n++)part("a-cylinder",{position:`${-.3+n*.15} -.19 .2`,radius:".035",height:".04",rotation:"90 0 0",color:"#55e6bd"});
-   part("a-torus",{position:"0 .28 0",radius:".2",radiusTubular:".018",color:"#51e5ff"});
+   // Sin aros decorativos alrededor del equipo: se conservan solo sus piezas funcionales.
  }else if(current.id==="robotica"){
-   part("a-box",{width:".5",height:".42",depth:".35",color:hue});part("a-sphere",{position:"0 .34 .02",radius:".24",color:"#b8cce0"});part("a-cylinder",{position:"0 -.35 0",radius:".09",height:".35",color:"#51e5ff"});part("a-box",{position:".32 -.02 0",width:".16",height:".55",depth:".15",color:"#bd7c42"});
+   part("a-box",{width:".5",height:".42",depth:".35",color:hue});part("a-sphere",{position:"0 .34 .02",radius:".24",color:"#b8cce0"});part("a-box",{position:"0 -.29 0",width:".11",height:".3",depth:".12",color:"#51e5ff"});part("a-box",{position:".32 -.02 0",width:".16",height:".55",depth:".15",color:"#bd7c42"});
  }else if(current.id==="electronica"){
    if(i===0)part("a-box",{width:".65",height:".38",depth:".35",color:"#3273b7"});
-   else if(i===1)part("a-torus",{radius:".26",radiusTubular:".045",color:"#d6b45c"});
+   else if(i===1){part("a-box",{width:".42",height:".12",depth:".12",color:"#d6b45c"});for(let n=0;n<4;n++)part("a-box",{position:`${-.15+n*.1} .09 0`,width:".035",height:".08",depth:".12",color:"#d6b45c"});}
    else if(i===2){part("a-box",{width:".4",height:".12",depth:".28",color:"#303d4d"});part("a-cylinder",{position:"0 .13 0",radius:".08",height:".2",color:"#55e6bd"});}
    else{part("a-sphere",{radius:".2",color:"#ffe36a",material:"emissive: #9c7a20; emissiveIntensity: .4"});part("a-cylinder",{position:"0 -.22 0",radius:".13",height:".12",color:"#9aa8b8"});}
  }else if(current.id==="sistemas"||current.id==="programacion"||current.id==="ciberseguridad"){
@@ -123,7 +123,7 @@ function createObject(item,i){
  }else if(current.id==="ia"){
    part("a-sphere",{radius:".26",color:hue});for(let n=0;n<5;n++){const angle=n*Math.PI*2/5;part("a-sphere",{position:`${Math.cos(angle)*.48} ${Math.sin(angle)*.32} 0`,radius:".09",color:"#51e5ff"});part("a-cylinder",{position:`${Math.cos(angle)*.24} ${Math.sin(angle)*.16} 0`,height:".5",radius:".012",rotation:`0 0 ${angle*180/Math.PI}`,color:"#51e5ff"});}
  }else if(current.id==="arvr"){
-   part("a-box",{width:".55",height:".3",depth:".2",color:"#263e59"});part("a-sphere",{position:"-.16 0 .13",radius:".12",color:"#51e5ff"});part("a-sphere",{position:".16 0 .13",radius:".12",color:"#51e5ff"});part("a-torus",{position:"0 .23 0",radius:".35",radiusTubular:".025",color:"#55e6bd"});
+   part("a-box",{width:".55",height:".3",depth:".2",color:"#263e59"});part("a-sphere",{position:"-.16 0 .13",radius:".12",color:"#51e5ff"});part("a-sphere",{position:".16 0 .13",radius:".12",color:"#51e5ff"});part("a-box",{position:"0 .23 -.08",width:".62",height:".045",depth:".07",color:"#55e6bd"});
  }else{
    part("a-box",{width:".72",height:".55",depth:".45",color:hue});part("a-cylinder",{position:"0 .34 0",radius:".22",height:".08",color:"#51e5ff"});
  }
