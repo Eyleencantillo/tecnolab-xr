@@ -35,32 +35,29 @@ function buildScene(){
  addAvatar(3.8, "Explorador XR", "#278e8b");
  current.items.forEach((item,i)=>createObject(item,i));
 }
-function addAvatar(x,label,shirt){
+function addAvatar(x,label,variant){
+ // Modelos humanos GLB con malla, ropa y texturas reales. Activos CC0 de Innerscene,
+ // adaptados de MakeHuman. Se cargan desde sus archivos GLB originales.
  const avatar=el("a-entity",{position:`${x} 0 .9`,class:"lab-avatar"});
- // Personajes guía 3D estilizados, con ropa por capas y rostro detallado.
- el("a-sphere",{position:"0 .91 0",scale:".30 .39 .19",color:shirt,material:"roughness:.72; metalness:.08"},avatar);
- el("a-box",{position:"0 .73 0",width:".42",height:".13",depth:".25",color:shirt,material:"roughness:.7"},avatar);
- el("a-cylinder",{position:"0 1.13 0",radius:".075",height:".17",color:"#c98d68"},avatar);
- el("a-sphere",{position:"0 1.37 0",radius:".205",color:"#d9a47c",material:"roughness:.88"},avatar);
- el("a-sphere",{position:"0 1.49 -.015",scale:"1 .48 1",radius:".205",color:"#34251f"},avatar);
- el("a-sphere",{position:"-.205 1.37 0",scale:".16 .22 .12",color:"#c98d68"},avatar);
- el("a-sphere",{position:".205 1.37 0",scale:".16 .22 .12",color:"#c98d68"},avatar);
- el("a-sphere",{position:"-.073 1.385 .18",scale:".045 .055 .025",color:"#ffffff"},avatar);
- el("a-sphere",{position:".073 1.385 .18",scale:".045 .055 .025",color:"#ffffff"},avatar);
- el("a-sphere",{position:"-.073 1.385 .202",radius:".022",color:"#243044"},avatar);
- el("a-sphere",{position:".073 1.385 .202",radius:".022",color:"#243044"},avatar);
- el("a-sphere",{position:"0 1.32 .195",scale:".035 .05 .035",color:"#bd8060"},avatar);
- el("a-torus",{position:"0 1.285 .18",radius:".065",radiusTubular:".009",arc:"180",rotation:"0 0 180",color:"#8d4f49"},avatar);
- el("a-capsule",{position:"-.29 .91 0",radius:".085",height:".39",rotation:"0 0 24",color:shirt},avatar);
- el("a-capsule",{position:".29 .91 0",radius:".085",height:".39",rotation:"0 0 -24",color:shirt},avatar);
- el("a-sphere",{position:"-.39 .67 .015",radius:".075",color:"#d9a47c"},avatar);
- el("a-sphere",{position:".39 .67 .015",radius:".075",color:"#d9a47c"},avatar);
- el("a-capsule",{position:"-.115 .34 0",radius:".09",height:".42",color:"#263d59"},avatar);
- el("a-capsule",{position:".115 .34 0",radius:".09",height:".42",color:"#263d59"},avatar);
- el("a-box",{position:"-.12 .075 .075",width:".19",height:".12",depth:".32",color:"#182536",material:"roughness:.55"},avatar);
- el("a-box",{position:".12 .075 .075",width:".19",height:".12",depth:".32",color:"#182536",material:"roughness:.55"},avatar);
- el("a-box",{position:"0 .99 .19",width:".12",height:".22",depth:".025",color:"#e8f7ff"},avatar);
- el("a-text",{value:label,align:"center",color:"#d9f6ff",width:"2.8",position:"0 1.72 0"},avatar);
+ const modelUrls={
+   guide:"https://files.innerscene.com/library/amara-3d-person-standing-office-2a16c294/bc0b8cf6d7fb55755f82/amara-woman.glb",
+   explorer:"https://files.innerscene.com/library/daniel-3d-person-standing-casual-f788af5a/9e300a9cc460f5e7c2d7/daniel-man.glb"
+ };
+ // Sombra y base discreta para integrar los personajes en el escenario.
+ el("a-circle",{position:"0 .025 0",rotation:"-90 0 0",radius:".48",color:variant==="guide"?"#3bd8d0":"#51bfff",opacity:".2",material:"transparent: true; shader: flat"},avatar);
+ el("a-torus",{position:"0 .035 0",rotation:"90 0 0",radius:".43",radiusTubular:".012",color:variant==="guide"?"#55e6bd":"#51e5ff",material:"emissive: #1689a9; emissiveIntensity: .35"},avatar);
+ const model=el("a-entity",{position:"0 0 0",rotation:"0 180 0",scale:"1 1 1","gltf-model":modelUrls[variant]},avatar);
+ model.addEventListener("model-loaded",()=>{
+   const status=avatar.querySelector(".avatar-loading");
+   if(status)status.setAttribute("visible","false");
+   model.setAttribute("animation__idle","property: position; from: 0 0 0; to: 0 .025 0; dur: 2400; dir: alternate; loop: true; easing: easeInOutSine");
+ });
+ model.addEventListener("model-error",()=>{
+   const status=avatar.querySelector(".avatar-loading");
+   if(status){status.setAttribute("value","Modelo no disponible");status.setAttribute("color","#ffb4a2");}
+ });
+ el("a-text",{value:"Cargando avatar 3D…",align:"center",color:"#d9f6ff",width:"2.8",position:"0 1.95 0",class:"avatar-loading"},avatar);
+ el("a-text",{value:label,align:"center",color:"#d9f6ff",width:"2.8",position:"0 2.12 0"},avatar);
 }
 function createObject(item,i){
  const x=(i-(current.items.length-1)/2)*1.45;
