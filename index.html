@@ -111,12 +111,25 @@
             <div class="scene-footer"><span>INTERACCIÓN PRINCIPAL: GESTOS CON LAS MANOS</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
           </div>
           <aside class="control-panel">
-            <div class="panel-title"><span>⌁</span><div><b>Panel de exploración</b><small>Interactúa con el escenario</small></div></div>
-            <div class="selected-card"><div class="selected-icon" id="selectedIcon">◇</div><div><small>ELEMENTO ACTUAL</small><b id="selectedName">Selecciona un objeto</b></div></div>
-            <p class="panel-description" id="selectedDescription">Haz clic o toca un objeto del escenario para conocerlo y manipularlo.</p>
-            <div class="control-group"><label>MANIPULACIÓN</label><div class="control-row"><button id="rotateLeft">↶ Girar</button><button id="rotateRight">↷ Girar</button></div><div class="control-row"><button id="scaleDown">− Reducir</button><button id="scaleUp">＋ Ampliar</button></div><button class="wide-btn" id="moveCenter">⌖ Centrar objeto</button></div>
-            <div class="control-group"><label>HERRAMIENTAS DEL LABORATORIO</label><div id="actionButtons" class="action-buttons"></div></div>
-            <div class="gesture-guide"><b>✋ CONTROLA CON TUS MANOS</b><span>🤏 Junta pulgar e índice sobre un modelo: agarrar</span><span>✋ Mantén la pinza y desplaza la mano: mover</span><span>👌 Separa pulgar e índice: soltar</span><span>🖐️ Mano abierta: girar el modelo seleccionado</span></div><div class="tip-box"><span>✦</span><div><b>Consejo de exploración</b><p id="tipText">Activa la cámara, apunta a una pieza y agárrala con pulgar e índice para desplazarla.</p></div></div>
+            <div class="panel-title"><span class="panel-title-icon">⌁</span><div><b>Panel de exploración</b><small>Tu centro de control del laboratorio</small></div><span class="panel-live"><i></i> LISTO</span></div>
+            <section class="explore-object-card">
+              <div class="explore-section-kicker"><span>01</span> OBJETO SELECCIONADO</div>
+              <div class="selected-card"><div class="selected-icon" id="selectedIcon">◇</div><div><small>ESTÁS EXPLORANDO</small><b id="selectedName">Selecciona un objeto</b></div></div>
+              <p class="panel-description" id="selectedDescription">Haz clic o toca un objeto del escenario para conocerlo y manipularlo.</p>
+            </section>
+            <section class="panel-section">
+              <div class="panel-section-heading"><span class="panel-step-icon">✥</span><div><b>Manipula el modelo</b><small>Gira, cambia su tamaño o céntralo</small></div></div>
+              <div class="control-group"><div class="control-row"><button id="rotateLeft"><span>↶</span> Girar</button><button id="rotateRight"><span>↷</span> Girar</button></div><div class="control-row"><button id="scaleDown"><span>－</span> Reducir</button><button id="scaleUp"><span>＋</span> Ampliar</button></div><button class="wide-btn" id="moveCenter"><span>⌖</span> Centrar objeto</button></div>
+            </section>
+            <section class="panel-section">
+              <div class="panel-section-heading"><span class="panel-step-icon tools-icon">⚙</span><div><b>Herramientas del laboratorio</b><small>Prueba acciones para aprender</small></div></div>
+              <div id="actionButtons" class="action-buttons"></div>
+            </section>
+            <section class="panel-section hand-tips-section">
+              <div class="panel-section-heading"><span class="panel-step-icon hand-icon">✋</span><div><b>Controla con tus manos</b><small>Gestos rápidos para interactuar</small></div></div>
+              <div class="gesture-guide"><span><b>🤏</b> Pellizca para agarrar</span><span><b>↔</b> Desplaza la mano para mover</span><span><b>👌</b> Separa los dedos para soltar</span><span><b>🖐️</b> Abre la mano para girar</span></div>
+            </section>
+            <div class="tip-box"><span>✦</span><div><b>¡Un consejo!</b><p id="tipText">Activa la cámara, apunta a una pieza y agárrala con pulgar e índice para desplazarla.</p></div></div>
           </aside>
         </div>
         <div class="learning-strip"><div><span class="strip-icon">◎</span><div><b>Objetivo de aprendizaje</b><p id="objectiveText"></p></div></div><div class="progress-wrap"><span>PROGRESO DEL LABORATORIO</span><div class="progress-track"><i id="progressBar"></i></div></div></div>
