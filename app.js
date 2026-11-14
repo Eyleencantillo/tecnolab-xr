@@ -157,8 +157,8 @@ async function startHands(){
    }).length;
    // Umbrales más amplios para que la pinza se reconozca sin exigir juntar
    // completamente los dedos. Los otros tres dedos deben permanecer doblados.
-   if(pinchRatio<.52)return "PINCH";
-   if(pinchRatio>.72&&otherExtended<=1)return "SPREAD";
+   if(pinchRatio<.55)return "PINCH";
+   if(pinchRatio>.78&&otherExtended<=2)return "SPREAD";
    const extended=[8,12,16,20].filter(tip=>{
     const pip=tip-2;
     return Math.hypot(lm[tip].x-wrist.x,lm[tip].y-wrist.y)>
@@ -202,8 +202,8 @@ async function startHands(){
   function zoomSelected(direction){
    if(!selectedEl)return;
    const obj=selectedEl.object3D;
-   const factor=direction>0?1.035:.965;
-   const next=T.MathUtils.clamp(obj.scale.x*factor,.45,3);
+   const factor=direction>0?1.07:1/1.07;
+   const next=T.MathUtils.clamp(obj.scale.x*factor,.35,4);
    obj.scale.set(next,next,next);
    obj.updateMatrixWorld(true);
   }
@@ -233,11 +233,11 @@ async function startHands(){
     status.textContent="MANO ABIERTA · desplázala a izquierda o derecha para girar el objeto.";
    }else if(detected==="PINCH"){
     anchor=null;previousPoint=null;
-    if(selectedEl){zoomSelected(1);status.textContent="PELLIZCO CERRADO · acercando el objeto. Mantén pulgar e índice juntos."}
+    if(selectedEl){zoomSelected(1);status.textContent="PELLIZCO CERRADO · acercando · escala "+Math.round(selectedEl.object3D.scale.x*100)+"%. Mantén pulgar e índice juntos."}
     else status.textContent="PELLIZCO DETECTADO · selecciona primero un objeto.";
    }else if(detected==="SPREAD"){
     anchor=null;previousPoint=null;
-    if(selectedEl){zoomSelected(-1);status.textContent="PELLIZCO ABIERTO · alejando el objeto. Separa pulgar e índice y dobla los otros dedos."}
+    if(selectedEl){zoomSelected(-1);status.textContent="PELLIZCO ABIERTO · alejando · escala "+Math.round(selectedEl.object3D.scale.x*100)+"%. Separa pulgar e índice y mantén los demás dedos doblados."}
     else status.textContent="SEPARA PULGAR E ÍNDICE · selecciona primero un objeto.";
    }else{
     anchor=null;previousPoint=null;
