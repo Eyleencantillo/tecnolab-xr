@@ -23,79 +23,172 @@ function openLab(id){current=modules.find(m=>m.id===id);if(!current)return;$("#h
 function el(tag,attrs={},parent=world){const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
 function buildScene(){
  world.innerHTML="";
- // Suelo continuo y arquitectura del laboratorio: se elimina la apariencia de escenario vacío.
- el("a-plane",{position:"0 0 0",rotation:"-90 0 0",width:"11.5",height:"9",color:"#174363",material:"roughness: .82"});
- el("a-plane",{position:"0 3.1 -4.35",width:"11.5",height:"6.2",color:"#123451",material:"roughness: .9"});
- el("a-plane",{position:"-5.72 2.8 0",rotation:"0 90 0",width:"8.8",height:"5.6",color:"#10304a"});
- el("a-plane",{position:"5.72 2.8 0",rotation:"0 -90 0",width:"8.8",height:"5.6",color:"#0b2036"});
- // Paneles arquitectónicos, ventanales y líneas de luz en la pared posterior.
- for(let i=0;i<5;i++){
-   const x=-4.55+i*2.27;
-   el("a-box",{position:`${x} 2.55 -4.22`,width:"2.08",height:"4.75",depth:".08",color:i%2?"#173b59":"#14334f",material:"roughness:.72"});
-   el("a-box",{position:`${x} 4.92 -4.14`,width:"1.55",height:".035",depth:".025",color:i%2?"#51e5ff":"#55e6bd",material:"emissive: #248da8; emissiveIntensity:.45"});
- }
- // Pantalla técnica central que da identidad visual al espacio.
- el("a-box",{position:"0 3.35 -4.02",width:"3.35",height:"1.62",depth:".16",color:"#07182b",material:"metalness:.35; roughness:.3"});
- el("a-plane",{position:"0 3.35 -3.925",width:"3.12",height:"1.4",color:"#123e5a",material:"emissive:#0b3550; emissiveIntensity:.25"});
- el("a-text",{value:"TECNOLAB  /  XR",position:"0 3.52 -3.89",align:"center",color:"#8cecff",width:"4.2"});
- el("a-text",{value:"LABORATORIO INTERACTIVO",position:"0 3.19 -3.89",align:"center",color:"#d5eaf5",width:"3.2"});
- // Marcos de iluminación superior y luminarias.
- for(let i=0;i<4;i++){
-   el("a-box",{position:`${-3.6+i*2.4} 5.85 -1.4`,width:"1.45",height:".045",depth:".22",color:"#51e5ff",material:"emissive:#51e5ff; emissiveIntensity:.65"});
- }
- el("a-grid",{position:"0 .012 0",rotation:"-90 0 0",width:"11.5",height:"9",color:"#3b7794",opacity:".22"});
- // Módulos laterales bajos para que el espacio se perciba como un laboratorio equipado.
- for(const x of [-4.65,4.65]){
-   el("a-box",{position:`${x} .52 -1.9`,width:".82",height:"1.04",depth:"2.2",color:"#173b58",material:"roughness:.55; metalness:.22"});
-   el("a-box",{position:`${x} 1.06 -1.9`,width:".9",height:".08",depth:"2.28",color:"#287b9b",material:"metalness:.35; roughness:.3"});
-   for(let n=0;n<3;n++)el("a-box",{position:`${x} ${.3+n*.2} -.92`,width:".035",height:".07",depth:".035",color:n===1?"#55e6bd":"#51e5ff",material:"emissive:#1689a9; emissiveIntensity:.4"});
- }
- // Iluminación de estudio para dar volumen y reflejos a los modelos.
- el("a-entity",{light:"type: ambient; color: #dceeff; intensity: 1.15",position:"0 4 0"});
- el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.55",position:"-3 6 4"});
- el("a-entity",{light:"type: point; color: #51dfff; intensity: .8; distance: 11",position:"3 3 1"});
- el("a-entity",{light:"type: point; color: #ffb76b; intensity: .42; distance: 9",position:"-3 2 -2"});
- // Los objetos del laboratorio se conservan sin personajes decorativos.
+ // Escenario limpio: sin paredes, suelo, paneles, muebles ni plataformas.
+ // Solo iluminación de estudio para destacar los modelos 3D.
+ el("a-entity",{light:"type: ambient; color: #ffffff; intensity: 1.35",position:"0 3 2"});
+ el("a-entity",{light:"type: directional; color: #ffffff; intensity: 1.9",position:"-3 6 4"});
+ el("a-entity",{light:"type: point; color: #45d9ff; intensity: .85; distance: 12",position:"3 2 1"});
+ el("a-entity",{light:"type: point; color: #ff9f43; intensity: .55; distance: 10",position:"-3 1 -2"});
  current.items.forEach((item,i)=>createObject(item,i));
 }
 function createObject(item,i){
  const x=(i-(current.items.length-1)/2)*1.45;
- const g=el("a-entity",{position:`${x} 1.05 -.35`,class:"interactive", "data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."});
- const hue=["#18a9df","#5578f5","#21bfa3","#9b6cf2","#f09a43","#36c5df"][i%6];
- const part=(tag,attrs)=>el(tag,attrs,g);
- // Modelos 3D distintos según el contenido del laboratorio.
- if(current.id==="hardware"||current.id==="datos"){
-   if(i===0){part("a-box",{width:"1.05",height:".12",depth:".78",color:"#176b55"});for(let n=0;n<4;n++)part("a-box",{position:`${-.36+n*.24} .12 0`,width:".12",height:".12",depth:".48",color:"#d5b45c"});}
-   else if(i===1){part("a-box",{width:".55",height:".16",depth:".55",color:"#252f43"});part("a-box",{position:"0 .1 0",width:".35",height:".035",depth:".35",color:"#51e5ff"});}
-   else if(i===2){part("a-box",{width:".9",height:".12",depth:".22",color:"#1c3c70"});for(let n=0;n<8;n++)part("a-box",{position:`${-.36+n*.1} .09 0`,width:".035",height:".035",depth:".25",color:"#d9c16b"});}
-   else if(i===3){part("a-box",{width:".75",height:".16",depth:".48",color:"#48566c"});part("a-cylinder",{position:"0 .11 0",radius:".12",height:".025",rotation:"90 0 0",color:"#51e5ff"});}
-   else if(i===4){part("a-box",{width:".9",height:".18",depth:".48",color:"#202a3a"});part("a-cylinder",{position:"-.25 .12 0",radius:".18",height:".07",color:"#51e5ff"});part("a-cylinder",{position:".25 .12 0",radius:".18",height:".07",color:"#51e5ff"});}
-   else{part("a-box",{width:".72",height:".55",depth:".5",color:"#39485e"});part("a-box",{position:"0 .29 .02",width:".34",height:".035",depth:".03",color:"#55e6bd"});}
+ const g=el("a-entity",{position:x+" 1.12 -.35",class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."});
+ const colors=["#12c8e8","#5378ff","#20d5a0","#b06bff","#ff9b42","#f04f91"];
+ const c=colors[i%colors.length];
+ const p=(tag,attrs={})=>{
+   if(tag!=="a-text"&&!attrs.material)attrs.material="shader: standard; roughness: .34; metalness: .28";
+   return el(tag,attrs,g);
+ };
+ const box=(pos,w,h,d,color,extra={})=>p("a-box",Object.assign({position:pos,width:w,height:h,depth:d,color:color},extra));
+ const cyl=(pos,r,h,color,extra={})=>p("a-cylinder",Object.assign({position:pos,radius:r,height:h,color:color},extra));
+ const sph=(pos,r,color,extra={})=>p("a-sphere",Object.assign({position:pos,radius:r,color:color},extra));
+ const txt=(value,pos,width,color="#ffffff")=>p("a-text",{value:value,position:pos,align:"center",color:color,width:width,side:"double"});
+ const gold="#f6c453",dark="#17263d",metal="#a9bacb",bright="#eaf7ff";
+ if(current.id==="hardware"){
+   if(i===0){
+     box("0 0 0",1.08,.09,.78,"#087d63");
+     box("0 .052 0",.98,.018,.68,"#13a77c");
+     box("0 .075 0",.32,.035,.3,dark);
+     box("0 .097 0",.23,.018,.21,"#d6e2ed");
+     for(let n=0;n<4;n++){box((-.39+n*.26)+" .09 -.12",.055,.025,.36,"#263d67");box((-.39+n*.26)+" .105 -.12",.025,.018,.29,"#d6b85b")}
+     for(let n=0;n<6;n++)cyl((-.43+n*.17)+" .09 .27",.035,.09,gold,{rotation:"90 0 0"});
+     for(let n=0;n<5;n++)box("-.48 .09 "+(-.25+n*.1),.07,.035,.045,"#d9e4ee");
+     box("-.48 .12 -.34",.16,.1,.12,"#c7d5e2");
+   }else if(i===1){
+     box("0 0 0",.58,.15,.58,dark);
+     box("0 .084 0",.49,.035,.49,"#dce5ed");
+     box("0 .106 0",.35,.012,.35,"#f7fbff");
+     txt("CORE","0 .12 0",1.1,"#2855a3");
+     for(let a=0;a<6;a++)for(let b=0;b<6;b++)box((-.22+a*.088)+" -.09 "+(-.22+b*.088),.035,.035,.035,gold);
+   }else if(i===2){
+     box("0 0 0",.98,.07,.24,"#167d58");
+     for(let n=0;n<8;n++){box((-.39+n*.112)+" .045 0",.075,.07,.17,n%2?"#1d293d":"#253b5b");box((-.39+n*.112)+" .083 0",.04,.012,.12,"#4e6b8c")}
+     for(let n=0;n<20;n++)box((-.46+n*.048)+" -.045 .13",.022,.018,.08,gold);
+   }else if(i===3){
+     box("0 0 0",.78,.13,.48,"#26374b");
+     box("0 .072 0",.65,.012,.36,"#d4e0eb");
+     box("0 .085 0",.3,.012,.16,"#1b70a8");
+     txt("SSD","0 .1 0",.8,"#ffffff");
+     for(const pos of ["-.33 .075 -.18",".33 .075 -.18","-.33 .075 .18",".33 .075 .18"])cyl(pos,.025,.012,gold);
+   }else if(i===4){
+     box("0 0 0",1,.2,.48,"#263b54");
+     box("0 .11 0",.91,.025,.42,"#3f5e7c");
+     for(const x0 of [-.25,.25]){
+       cyl(x0+" .13 .02",.17,.045,"#15263c",{rotation:"90 0 0"});
+       cyl(x0+" .16 .045",.115,.025,"#31bce4",{rotation:"90 0 0"});
+       cyl(x0+" .18 .06",.045,.02,"#dce8f2",{rotation:"90 0 0"});
+       for(let n=0;n<5;n++)box((x0+Math.cos(n*1.256)*.09)+" .18 "+(.06+Math.sin(n*1.256)*.09),.025,.018,.08,"#91a9bd");
+     }
+     box("0 -.13 0",.82,.045,.36,"#111e31");
+   }else{
+     box("0 0 0",.74,.58,.52,"#35465b");
+     box("0 .31 0",.76,.045,.54,"#93a6b8");
+     cyl("0 .02 .27",.19,.035,"#17263a",{rotation:"90 0 0"});
+     cyl("0 .02 .3",.12,.04,"#5e7892",{rotation:"90 0 0"});
+     for(let n=0;n<7;n++)box((-.27+n*.09)+" -.23 .269",.035,.025,.012,"#8fa5b9");
+     box("0 -.28 -.05",.5,.035,.35,"#18283d");
+   }
+ }else if(current.id==="datos"){
+   if(i===0){box("0 0 0",.58,.14,.58,dark);box("0 .08 0",.48,.025,.48,"#dce5ed");txt("CPU","0 .1 0",.9,"#2855a3");for(let a=0;a<6;a++)for(let b=0;b<6;b++)box((-.22+a*.088)+" -.09 "+(-.22+b*.088),.03,.035,.03,gold)}
+   else if(i===1){box("0 0 0",.95,.07,.23,"#137e5b");for(let n=0;n<8;n++)box((-.38+n*.11)+" .05 0",.075,.065,.16,"#253b5b");for(let n=0;n<18;n++)box((-.43+n*.05)+" -.045 .13",.02,.02,.07,gold)}
+   else if(i===2){box("0 0 0",.8,.14,.5,"#35475d");box("0 .08 0",.65,.015,.35,"#dce6ee");txt("DATA","0 .1 0",.9,"#236da7")}
+   else{box("0 0 0",.72,.86,.48,"#263a54");box("0 .18 .25",.58,.22,.025,"#14243a");box("0 -.12 .25",.58,.22,.025,"#14243a");for(let n=0;n<4;n++)sph((-.2+n*.13)+" .2 .28",.025,n%2?"#38e6b2":"#38c8ff");for(let n=0;n<4;n++)sph((-.2+n*.13)+" -.1 .28",.025,"#38e6b2");}
  }else if(current.id==="redes"){
-   part("a-box",{width:".9",height:".35",depth:".55",color:hue});for(let n=0;n<5;n++)part("a-cylinder",{position:`${-.3+n*.15} -.19 .2`,radius:".035",height:".04",rotation:"90 0 0",color:"#55e6bd"});
-   // Sin aros decorativos alrededor del equipo: se conservan solo sus piezas funcionales.
+   if(i===0){
+     box("0 0 0",.9,.27,.58,"#2478d0");box("0 .15 0",.82,.035,.5,"#3e9df0");
+     for(const xx of [-.28,.28])cyl(xx+" .42 -.12",.025,.55,"#dce8f2");
+     for(let n=0;n<5;n++)sph((-.27+n*.135)+" .16 .27",.025,n%2?"#48f0b4":"#ffdb65");
+     for(let n=0;n<4;n++)box((-.27+n*.18)+" -.09 .3",.11,.07,.025,"#15283e");
+   }else if(i===1){
+     box("0 0 0",1,.24,.55,"#263c58");box("0 .13 0",.94,.035,.5,"#3b5b7c");
+     for(let n=0;n<8;n++){box((-.39+n*.112)+" -.015 .29",.075,.105,.035,"#111d2e");box((-.39+n*.112)+" .05 .31",.035,.012,.012,gold)}
+     for(let n=0;n<8;n++)sph((-.39+n*.112)+" .11 -.15",.018,n%3?"#49edb3":"#ffe16a");
+   }else if(i===2){
+     box("0 0 0",.78,.9,.55,"#34475f");box("0 .22 .29",.65,.23,.035,"#101e32");box("0 -.12 .29",.65,.23,.035,"#101e32");
+     for(let n=0;n<5;n++)sph((-.22+n*.11)+" .22 .32",.025,n%2?"#40e5ad":"#4acbff");
+     for(let n=0;n<5;n++)sph((-.22+n*.11)+" -.12 .32",.025,"#4acbff");
+   }else{
+     box("0 0 0",.65,.65,.12,"#2c4059");box("0 .02 .08",.55,.42,.025,"#36a8ee");box("0 -.39 0",.12,.28,.12,metal);box("0 -.54 0",.55,.06,.3,"#7f91a8");
+     box("0 .02 .1",.36,.025,.012,"#ffffff");
+   }
  }else if(current.id==="robotica"){
-   part("a-box",{width:".5",height:".42",depth:".35",color:hue});part("a-sphere",{position:"0 .34 .02",radius:".24",color:"#b8cce0"});part("a-box",{position:"0 -.29 0",width:".11",height:".3",depth:".12",color:"#51e5ff"});part("a-box",{position:".32 -.02 0",width:".16",height:".55",depth:".15",color:"#bd7c42"});
- }else if(current.id==="electronica"){
-   if(i===0)part("a-box",{width:".65",height:".38",depth:".35",color:"#3273b7"});
-   else if(i===1){part("a-box",{width:".42",height:".12",depth:".12",color:"#d6b45c"});for(let n=0;n<4;n++)part("a-box",{position:`${-.15+n*.1} .09 0`,width:".035",height:".08",depth:".12",color:"#d6b45c"});}
-   else if(i===2){part("a-box",{width:".4",height:".12",depth:".28",color:"#303d4d"});part("a-cylinder",{position:"0 .13 0",radius:".08",height:".2",color:"#55e6bd"});}
-   else{part("a-sphere",{radius:".2",color:"#ffe36a",material:"emissive: #9c7a20; emissiveIntensity: .4"});part("a-box",{position:"0 -.22 0",width:".22",height:".12",depth:".2",color:"#9aa8b8"});}
- }else if(current.id==="sistemas"||current.id==="programacion"||current.id==="ciberseguridad"){
-   part("a-box",{width:".8",height:".58",depth:".09",color:"#253c59"});part("a-plane",{position:"0 0 .06",width:".68",height:".44",color:hue});for(let n=0;n<3;n++)part("a-box",{position:`0 ${.12-n*.12} .075`,width:".42",height:".025",depth:".015",color:"#d8f4ff"});
-   part("a-box",{position:"0 -.42 0",width:".1",height:".28",depth:".1",color:"#8399b0"});part("a-box",{position:"0 -.56 0",width:".55",height:".07",depth:".25",color:"#52677e"});
- }else if(current.id==="impresion"){
-   part("a-box",{width:".85",height:".75",depth:".12",color:"#54667b",material:"wireframe: true"});part("a-box",{position:"0 -.25 0",width:".62",height:".06",depth:".48",color:"#278e8b"});part("a-cone",{position:"0 .05 0",radiusBottom:".15",radiusTop:".04",height:".28",color:"#bd7c42"});
+   if(i===0){
+     box("0 0 0",.62,.09,.48,"#087d63");box("0 .06 0",.2,.08,.18,"#263b59");
+     for(let n=0;n<5;n++)cyl((-.23+n*.115)+" .07 .15",.025,.06,gold);
+     for(let n=0;n<4;n++)box((-.2+n*.13)+" .07 -.15",.08,.07,.1,"#243a59");
+   }else if(i===1){
+     box("0 0 0",.48,.3,.18,"#3b526c");cyl("-.14 0 .12",.11,.08,"#b6c9d9",{rotation:"90 0 0"});cyl(".14 0 .12",.11,.08,"#b6c9d9",{rotation:"90 0 0"});cyl("-.14 0 .17",.065,.025,"#263d57",{rotation:"90 0 0"});cyl(".14 0 .17",.065,.025,"#263d57",{rotation:"90 0 0"});
+   }else if(i===2){
+     cyl("0 0 0",.24,.5,"#1f6fb4",{rotation:"0 0 90"});cyl("0 0 .27",.09,.12,gold,{rotation:"0 0 90"});cyl("0 0 -.27",.08,.1,metal,{rotation:"0 0 90"});
+   }else{
+     box("0 -.3 0",.38,.16,.34,"#283d57");cyl("0 -.17 0",.14,.2,"#e1a13d");box("0 .04 0",.13,.48,.14,"#2b9bc9");cyl("0 .3 0",.12,.16,"#e1a13d");box(".22 .5 0",.48,.12,.14,"#2b9bc9");cyl(".47 .5 0",.09,.16,"#e1a13d");box(".58 .42 0",.22,.09,.12,"#d8e4ed");
+   }
+ }else if(current.id==="programacion"){
+   if(i===0){box("0 0 0",.55,.28,.42,"#19bd79");txt("INICIO","0 .02 .22",1.2,"#ffffff");}
+   else if(i===1){box("0 0 0",.65,.28,.42,"#278fe6");txt("AVANZAR","0 .02 .22",1.4);p("a-cone",{position:".38 .03 .02",radiusBottom:.12,radiusTop:.02,height:.24,rotation:"0 0 -90",color:"#f7fbff"});}
+   else if(i===2){box("0 0 0",.65,.28,.42,"#ed8b32");txt("GIRAR","0 .02 .22",1.2);p("a-cone",{position:".32 .03 .02",radiusBottom:.13,radiusTop:.02,height:.24,rotation:"0 0 -90",color:"#fff2d8"});}
+   else{box("0 0 0",.58,.32,.42,"#9b61e8");box("0 .19 0",.58,.08,.42,"#c08cff");txt("REPETIR","0 .02 .22",1.3);}
+ }else if(current.id==="ciberseguridad"){
+   if(i===0){
+     box("0 -.08 0",.52,.48,.18,"#258fe2");box("0 .24 0",.32,.28,.14,"#f6bd4c");box("0 .24 .09",.19,.19,.025,"#263b58");sph("0 -.08 .13",.055,"#ffffff");box("0 -.2 .13",.035,.12,.035,"#ffffff");
+   }else if(i===1){
+     box("0 0 0",.68,.48,.1,"#e8f2fb");box("0 .11 .06",.55,.08,.025,"#f05d78");box("-.16 -.02 .07",.2,.025,.02,"#5d7896");box(".12 -.02 .07",.25,.025,.02,"#5d7896");box("0 -.15 .07",.46,.025,.02,"#5d7896");
+   }else if(i===2){
+     p("a-octahedron",{radius:.42,color:"#e64c5e",position:"0 0 0"});box("0 0 .31",.2,.48,.07,"#f9d15b");box("0 0 .36",.08,.3,.025,"#24364f");
+   }else{
+     box("0 0 0",.58,.52,.15,"#347cc5");box("0 .05 .1",.34,.18,.025,"#c7e6ff");for(let n=0;n<3;n++)sph((-.15+n*.15)+" -.16 .1",.035,gold);
+   }
  }else if(current.id==="ia"){
-   part("a-sphere",{radius:".26",color:hue});for(let n=0;n<5;n++){const angle=n*Math.PI*2/5;part("a-sphere",{position:`${Math.cos(angle)*.48} ${Math.sin(angle)*.32} 0`,radius:".09",color:"#51e5ff"});part("a-cylinder",{position:`${Math.cos(angle)*.24} ${Math.sin(angle)*.16} 0`,height:".5",radius:".012",rotation:`0 0 ${angle*180/Math.PI}`,color:"#51e5ff"});}
+   if(i===0){
+     for(let n=0;n<5;n++){cyl((-.28+n*.14)+" 0 0",.06,.38,n%2?"#3a9de8":"#28c99a");sph((-.28+n*.14)+" .23 0",.055,"#f7c653");}
+   }else if(i===1){
+     sph("0 0 0",.19,"#9d63ef");for(let n=0;n<6;n++){const a=n*Math.PI/3;const xx=Math.cos(a)*.39,yy=Math.sin(a)*.32;cyl((xx/2)+" "+(yy/2)+" 0",.014,.46,"#4bd8ff",{rotation:"0 0 "+(-a*180/Math.PI)});sph(xx+" "+yy+" 0",.085,n%2?"#21c9a0":"#3b9df2");}
+   }else if(i===2){
+     box("0 0 0",.58,.58,.48,"#2b4667");box("0 .05 .25",.38,.25,.025,"#9d63ef");for(let n=0;n<4;n++)sph((-.2+n*.13)+" -.2 .27",.035,"#4bd8ff");
+   }else{
+     box("0 -.2 0",.65,.12,.4,"#334c69");for(let n=0;n<4;n++)box((-.22+n*.15)+" "+(-.05+n*.13)+" 0",.09,.14,.1,n%2?"#27c99b":"#4b9fff");
+     p("a-cone",{position:".35 .25 0",radiusBottom:.16,radiusTop:.02,height:.32,color:"#f5c34f"});
+   }
+ }else if(current.id==="electronica"){
+   if(i===0){cyl("0 0 0",.22,.62,"#2386d6");cyl("0 .32 0",.19,.035,gold);cyl("0 -.32 0",.19,.035,gold);txt("AA","0 .02 .23",.8);}
+   else if(i===1){cyl("0 0 0",.055,.82,"#e9b84d",{rotation:"0 0 90"});sph("-.42 0 0",.075,"#e34f65");sph(".42 0 0",.075,"#3e9de9");}
+   else if(i===2){box("0 0 0",.42,.22,.28,"#263d59");cyl("0 .18 0",.045,.25,"#f4c24f",{rotation:"0 0 -25"});sph("0 .29 0",.06,"#f4c24f");}
+   else{sph("0 .13 0",.19,"#fff0a0",{material:"shader: standard; roughness: .18; metalness: .05; emissive: #ffd84a; emissiveIntensity: .35"});cyl("0 -.1 0",.09,.18,"#c5d0dc");cyl("0 -.22 0",.095,.06,gold);}
  }else if(current.id==="arvr"){
-   part("a-box",{width:".55",height:".3",depth:".2",color:"#263e59"});part("a-sphere",{position:"-.16 0 .13",radius:".12",color:"#51e5ff"});part("a-sphere",{position:".16 0 .13",radius:".12",color:"#51e5ff"});part("a-box",{position:"0 .23 -.08",width:".62",height:".045",depth:".07",color:"#55e6bd"});
+   if(i===0){
+     box("0 0 0",.72,.35,.28,"#263b59");box("0 .02 .16",.62,.24,.06,"#17253a");for(const xx of [-.18,.18]){sph(xx+" .02 .2",.11,"#4bd9ff",{material:"shader: standard; roughness: .12; metalness: .12; opacity: .75; transparent: true"});}
+     box("0 .23 -.04",.64,.05,.1,"#20cba0");
+   }else if(i===1){
+     box("0 0 0",.38,.62,.12,"#253d5c");box("0 .03 .08",.32,.48,.025,"#39a9ee");box("0 .03 .1",.22,.025,.015,"#e9f7ff");sph(".22 .18 .1",.08,"#f5c34f");
+   }else if(i===2){
+     box("0 0 0",.72,.34,.28,"#253a56");for(const xx of [-.19,.19])sph(xx+" 0 .16",.115,"#6e7df2");box("0 .22 -.02",.68,.06,.12,"#24cda5");
+   }else{box("0 0 0",.5,.5,.12,"#2c4563");box("0 0 .08",.36,.36,.035,"#42bce8");for(let n=0;n<4;n++)sph((-.12+(n%2)*.24)+" "+(-.12+Math.floor(n/2)*.24)+" .12","#.035","#f4cf62");}
+ }else if(current.id==="sistemas"){
+   if(i===0){box("0 -.08 0",.66,.42,.12,"#e9b94f");box("-.12 .17 .02",.38,.14,.12,"#f7cf68");box("0 -.04 .08",.56,.28,.025,"#f3cf79");}
+   else if(i===1){box("0 0 0",.52,.68,.08,"#e8f3fc");box("-.13 .2 .05",.12,.08,.015,"#55a9e8");for(let n=0;n<4;n++)box("0 "+(.05-n*.11)+" .05",.3,.025,.015,"#8ba5bd");}
+   else if(i===2){box("0 0 0",.72,.54,.1,"#405a79");box("0 .19 .06",.68,.1,.025,"#28a8e6");for(let n=0;n<3;n++)box("-.22 "+(.19-n*.17)+" .07",.12,.035,.015,"#dceaf5");}
+   else{cyl("0 -.02 0",.22,.48,"#d65c74");cyl("0 .23 0",.25,.06,"#ec8194");box("0 .27 0",.48,.06,.34,"#ec8194");}
+ }else if(current.id==="impresion"){
+   if(i===0){
+     for(const xx of [-.4,.4])box(xx+" 0 0",.07,.86,.07,"#a8b9c9");
+     box("0 .4 0",.86,.07,.07,"#a8b9c9");box("0 -.4 0",.86,.07,.07,"#a8b9c9");
+     box("0 -.22 .02",.65,.045,.5,"#2697cf");box("0 .23 0",.22,.18,.22,"#ef8f43");cyl("0 .1 .02",.07,.18,"#d8e4ee");
+   }else if(i===1){cyl("0 0 0",.28,.12,"#7a8da4",{rotation:"90 0 0"});cyl("0 0 .08",.1,.16,"#f09b43",{rotation:"90 0 0"});cyl("0 0 -.08",.1,.16,"#f09b43",{rotation:"90 0 0"});}
+   else if(i===2){box("0 0 0",.72,.08,.58,"#258fc1");box("0 .06 0",.62,.025,.48,"#52c5e8");}
+   else{p("a-dodecahedron",{radius:.35,color:"#a66df0"});box("0 -.38 0",.48,.06,.4,"#263d5b");}
+ }else if(current.id==="evolucion"){
+   if(i===0){box("0 0 0",.65,.36,.4,"#8b6948");box("0 .22 0",.55,.08,.34,"#c49a61");cyl("-.2 .28 .18",.045,.1,gold);box(".18 .23 .18",.2,.05,.04,"#e5d2a7");}
+   else if(i===1){box("0 -.08 0",.52,.28,.32,"#33465c");cyl("0 .1 .12",.24,.12,"#d8e2eb",{rotation:"90 0 0"});cyl("-.2 .1 .12",.08,.14,"#d8e2eb",{rotation:"90 0 0"});cyl(".2 .1 .12",.08,.14,"#d8e2eb",{rotation:"90 0 0"});}
+   else if(i===2){box("0 .08 0",.72,.52,.09,"#263b55");box("0 .08 .06",.62,.42,.025,"#42a9e9");box("0 -.3 0",.12,.25,.12,"#a8b8c8");box("0 -.43 0",.52,.06,.28,"#71859c");}
+   else{box("0 0 0",.36,.7,.08,"#293e5a");box("0 0 .05",.3,.58,.025,"#35a8e8");box("0 -.25 .07",.1,.025,.012,"#eaf8ff");sph("0 .25 .08",.025,"#48e0b1");}
  }else{
-   part("a-box",{width:".72",height:".55",depth:".45",color:hue});part("a-cylinder",{position:"0 .34 0",radius:".22",height:".08",color:"#51e5ff"});
+   box("0 0 0",.72,.5,.42,c);box("0 .29 0",.4,.08,.3,"#eaf4fb");box("0 -.3 0",.3,.08,.2,"#263b55");
  }
- part("a-text",{value:item[0],align:"center",color:"#e8f7ff",width:"3.1",position:"0 -.66 0",side:"double"});
+ // Etiqueta discreta, separada del modelo y sin discos ni plataformas decorativas.
+ txt(item[0],"0 -.72 .02",3.2,"#f4f8ff");
  g.addEventListener("click",()=>selectObject(g,item));
- g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.06 1.06 1.06; dur: 180")});
+ g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.045 1.045 1.045; dur: 180")});
  g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")});
 }
 const objectPurposes={"Placa base":"Conectar el procesador, la memoria y las demás piezas para que puedan comunicarse.","Procesador":"Ejecutar instrucciones y coordinar las operaciones del computador.","Memoria RAM":"Mantener disponibles los datos y programas que se están usando en ese momento.","Unidad SSD":"Guardar el sistema, los programas y los archivos incluso cuando el computador está apagado.","Tarjeta gráfica":"Procesar imágenes, videos y gráficos para mostrarlos en la pantalla.","Fuente de poder":"Convertir y distribuir la energía eléctrica que necesitan los componentes.","Router":"Comunicar redes diferentes y dirigir los datos hacia su destino.","Switch":"Unir varios equipos dentro de una misma red local para que compartan información.","Servidor":"Ofrecer archivos, aplicaciones u otros servicios a los dispositivos conectados.","Computador":"Permitir al usuario crear, procesar, almacenar y compartir información.","Controlador":"Interpretar el programa y coordinar las acciones de las partes del robot.","Sensor":"Detectar cambios del entorno y enviar esa información al controlador.","Motor":"Producir el movimiento de las ruedas, articulaciones o mecanismos del robot.","Brazo robótico":"Sujetar, levantar y trasladar objetos con movimientos controlados.","Inicio":"Marcar el punto desde el que comienza una secuencia de instrucciones.","Mover adelante":"Indicar al personaje o robot que avance en la dirección establecida.","Girar":"Cambiar la orientación para continuar el recorrido en otra dirección.","Repetir":"Ejecutar varias veces una o más instrucciones sin escribirlas de nuevo.","Contraseña segura":"Ayudar a proteger cuentas y datos personales frente a accesos no autorizados.","Phishing":"Reconocer intentos de engaño que buscan robar contraseñas o información personal.","Firewall":"Filtrar conexiones y bloquear tráfico que no cumple las reglas de seguridad.","Cifrado":"Proteger datos para que solo puedan leerlos quienes tienen la clave adecuada.","Datos":"Proporcionar ejemplos e información con los que un sistema puede aprender o trabajar.","Modelo":"Analizar entradas y generar una clasificación, respuesta o predicción.","Entrenamiento":"Ajustar el modelo para que aprenda patrones a partir de ejemplos.","Predicción":"Estimar un resultado cuando el modelo recibe información nueva.","Batería":"Entregar la energía que impulsa la corriente eléctrica en el circuito.","Cable":"Unir los componentes y ofrecer un camino para el paso de la corriente.","Interruptor":"Permitir o interrumpir el paso de corriente al abrir o cerrar el circuito.","Bombilla":"Convertir la energía eléctrica en luz.","Objeto virtual":"Servir como elemento digital que se puede observar y manipular en el espacio 3D.","Realidad aumentada":"Mostrar información u objetos digitales integrados con la vista del entorno real.","Realidad virtual":"Sumergir al usuario en un entorno digital que puede explorar.","Seguimiento":"Detectar la posición o el movimiento para actualizar la experiencia digital.","Carpeta":"Organizar archivos y otras carpetas para encontrarlos con facilidad.","Archivo":"Guardar información que puede abrirse, consultarse o modificarse con una aplicación.","Ventana":"Mostrar y permitir trabajar con una aplicación o documento.","Papelera":"Conservar temporalmente elementos eliminados para poder recuperarlos o borrarlos definitivamente.","Extrusor":"Calentar y depositar el filamento siguiendo la forma definida para cada capa.","Filamento":"Aportar el material con el que se construye el objeto impreso.","Plataforma":"Sostener la pieza mientras se va construyendo capa por capa.","Modelo 3D":"Servir como diseño digital que guía la fabricación del objeto.","Memoria":"Mantener temporalmente información que el procesador necesita consultar rápidamente.","Almacenamiento":"Conservar programas y archivos para consultarlos más adelante.","Telégrafo":"Transmitir mensajes a distancia mediante señales codificadas.","Teléfono":"Permitir la comunicación de voz entre personas que están en lugares distintos.","Dispositivo móvil":"Facilitar la comunicación y el acceso a herramientas digitales desde distintos lugares."};
