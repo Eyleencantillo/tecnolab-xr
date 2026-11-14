@@ -236,13 +236,15 @@ async function startHands(){
  const video=$("#cameraVideo"),overlay=$("#handOverlay"),status=$("#handStatus");
  overlay.classList.remove("hidden");status.textContent="Solicitando acceso a la cámara…";
  try{
-  handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:960},height:{ideal:540},frameRate:{ideal:30,max:30}}});
+  handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:640},height:{ideal:480},frameRate:{ideal:30,max:30}}});
   video.srcObject=handStream;await video.play();
   status.textContent="Cargando reconocimiento de manos…";
   const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
   const files=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  const options={baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"CPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.35,minHandPresenceConfidence:.35,minTrackingConfidence:.35};
-  handTask=await vision.HandLandmarker.createFromOptions(files,options);
+  const modelAssetPath="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+  const options={baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.45,minHandPresenceConfidence:.45,minTrackingConfidence:.45};
+  try{handTask=await vision.HandLandmarker.createFromOptions(files,options);}
+  catch(gpuError){console.warn("GPU no disponible; se utilizará CPU:",gpuError);handTask=await vision.HandLandmarker.createFromOptions(files,{...options,baseOptions:{modelAssetPath,delegate:"CPU"}});status.textContent="Modo de compatibilidad activado · optimizando seguimiento…";}
   const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene"),T=window.AFRAME?.THREE||window.THREE;
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
   let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,grabAnchor=null,pinchActive=false,previousPoint=null,twoHandZoomDistance=null;
@@ -282,7 +284,7 @@ async function startHands(){
   }
   function setGesture(next){
    if(next===candidate)candidateFrames++;else{candidate=next;candidateFrames=1}
-   if(candidateFrames>=3&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null}
+   if(candidateFrames>=2&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null}
   }
   const handRaycaster=new T.Raycaster(),handPointer=new T.Vector2();
   function objectUnderHand(p){
@@ -342,11 +344,11 @@ async function startHands(){
   function frame(){
    handLoop=requestAnimationFrame(frame);
    if(video.readyState<2||!handTask||video.currentTime===lastVideoTime)return;
-   const now=performance.now();if(now-lastDetect<30)return;lastDetect=now;lastVideoTime=video.currentTime;
+   const now=performance.now();if(now-lastDetect<20)return;lastDetect=now;lastVideoTime=video.currentTime;
    let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.error("Error de lectura de manos:",error);status.textContent="ERROR AL LEER LAS MANOS · "+(error.message||"Reinicia el seguimiento.");return}
    const raw=result.landmarks||result.handLandmarks||[];
    const hands=raw.slice(0,2).map((lm,i)=>{
-    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.65+p.x*.35,y:old[j].y*.65+p.y*.35,z:(old[j].z||0)*.65+(p.z||0)*.35})):lm.map(p=>({...p}));
+    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.4+p.x*.6,y:old[j].y*.4+p.y*.6,z:(old[j].z||0)*.4+(p.z||0)*.6})):lm.map(p=>({...p}));
     smooth[i]=filtered;return filtered;
    });
    draw(hands);
