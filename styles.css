@@ -364,3 +364,49 @@ footer{border-top-color:#72cbd62b}
 @media(prefers-reduced-motion:no-preference){
  .module-card,.learn-card,.tool-btn,.panel-section button{transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
 }
+
+/* Portada: movimientos más perceptibles, fluidos y equilibrados. */
+@media(prefers-reduced-motion:no-preference){
+  .hero-float{animation:heroFloat 4.2s ease-in-out infinite}
+  .hardware-float{animation-delay:-.8s}
+  .robot-float{animation-delay:-2.2s}
+  .ai-float{animation-delay:-3.3s}
+  .hero-core{animation:heroCoreDrift 5.2s ease-in-out infinite}
+  .hero-cube{animation:heroCubeTilt 6s ease-in-out infinite}
+  .hero-lab-visual .orbit-a{animation:heroOrbitA 8s ease-in-out infinite}
+  .hero-lab-visual .orbit-b{animation:heroOrbitB 9s ease-in-out infinite}
+  .hero-hand-chip{animation:heroHandFloat 4.6s ease-in-out infinite}
+  .cube-spark{animation:heroSpark 2.8s ease-in-out infinite}
+  .spark-two{animation-delay:-1.4s}
+}
+@keyframes heroFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-16px)}
+}
+@keyframes heroCoreDrift{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-11px)}
+}
+@keyframes heroCubeTilt{
+  0%,100%{transform:rotate(-9deg) translateY(0)}
+  50%{transform:rotate(-5deg) translateY(-7px)}
+}
+@keyframes heroOrbitA{
+  0%,100%{transform:rotate(-28deg) translateY(0) scale(1)}
+  50%{transform:rotate(-19deg) translateY(-10px) scale(1.035)}
+}
+@keyframes heroOrbitB{
+  0%,100%{transform:rotate(58deg) translateY(0) scale(1)}
+  50%{transform:rotate(67deg) translateY(10px) scale(1.025)}
+}
+@keyframes heroHandFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-12px)}
+}
+@keyframes heroSpark{
+  0%,100%{transform:scale(.85) rotate(0);opacity:.65}
+  50%{transform:scale(1.2) rotate(18deg);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-float,.hero-core,.hero-cube,.hero-lab-visual .orbit-a,.hero-lab-visual .orbit-b,.hero-hand-chip,.cube-spark{animation:none!important}
+}
