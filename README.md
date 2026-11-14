@@ -26,6 +26,16 @@ Aplicación web educativa para explorar conceptos de Tecnología e Informática 
 - Comprobación de compatibilidad con WebXR AR.
 - Manifest y service worker para capacidades básicas de PWA.
 
+
+## Modelos humanos 3D
+
+Los laboratorios incorporan dos figuras humanas texturizadas en formato GLB:
+
+- **Amara — figura de pie, vestimenta de oficina:** modelo de Innerscene, adaptado de recursos MakeHuman y publicado bajo dedicación **CC0**. La ficha del recurso indica un tamaño de 16,6 MB, texturas integradas y malla estática sin animación: https://www.innerscene.com/tools/library/3d-parts/amara-3d-person-standing-office-2a16c294
+- **Daniel — figura de pie, vestimenta casual:** modelo de Innerscene, adaptado de recursos MakeHuman y publicado bajo dedicación **CC0**. La ficha indica un tamaño de 26,3 MB, texturas integradas y malla estática sin animación: https://www.innerscene.com/tools/library/3d-parts/daniel-3d-person-standing-casual-f788af5a
+
+Los modelos se sirven desde Innerscene, por lo que necesitan conexión a internet y pueden tardar en aparecer según la velocidad de red. Son figuras estáticas: no tienen esqueleto ni animaciones humanas. La escala aplicada en el escenario es uniforme y busca mantener una proporción visual adecuada.
+
 ## Ejecutar localmente
 Se recomienda Node.js 20 o superior.
 
