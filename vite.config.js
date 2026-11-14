@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/tecnolab-xr/'
+  // GitHub Pages serves the app from a repository subpath; Vercel serves it from the domain root.
+  base: process.env.GITHUB_ACTIONS === 'true' ? '/tecnolab-xr/' : '/'
 });
