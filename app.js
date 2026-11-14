@@ -12,7 +12,58 @@ const modules=[
 {id:"datos",name:"Almacenamiento y procesamiento",short:"Explora cómo se guardan y procesan los datos.",icon:"▤",tag:"DATOS",description:"Conoce dispositivos que almacenan información y componentes que la procesan.",objective:"Diferenciar almacenamiento y procesamiento mediante ejemplos tecnológicos.",tip:"Selecciona cada componente para consultar su función.",items:[["Procesador","Ejecuta instrucciones y operaciones.","▣"],["Memoria","Conserva datos temporalmente para el trabajo del sistema.","▥"],["Almacenamiento","Conserva archivos incluso cuando el equipo se apaga.","▤"],["Servidor","Ofrece recursos o servicios a otros dispositivos.","▦"]],actions:["Simular transferencia","Guardar archivo demo","Limpiar transferencia"],challenge:"Distingue qué componente procesa información y cuál la conserva."},
 {id:"evolucion",name:"Evolución tecnológica",short:"Recorre hitos de la historia de la tecnología.",icon:"◷",tag:"HISTORIA",description:"Explora cambios en dispositivos y herramientas a través del tiempo.",objective:"Reconocer que la tecnología evoluciona para responder a necesidades humanas.",tip:"Selecciona cada objeto y compara sus características.",items:[["Telégrafo","Permitió transmitir mensajes a distancia mediante señales.","⌁"],["Teléfono","Facilitó la comunicación oral a distancia.","☎"],["Computador","Automatiza el procesamiento de información.","▣"],["Dispositivo móvil","Integra comunicación y múltiples herramientas digitales.","▯"]],actions:["Ver línea de tiempo","Comparar dispositivos","Explorar galería"],challenge:"Ordena los hitos tecnológicos y explica un cambio importante en la comunicación."}
 ];
-const $=s=>document.querySelector(s);let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null,arSession=null,arOriginalBackground=null,arCameraStream=null,arModeActive=false;
+const $=s=>document.querySelector(s);
+const challengePlans={
+ hardware:[{target:"Procesador",text:"Localiza y selecciona el procesador."},{target:"Memoria RAM",text:"Ahora identifica la memoria RAM."},{target:"Unidad SSD",text:"Encuentra la unidad SSD."},{action:2,text:"¡Componentes identificados! Prueba el encendido del equipo."}],
+ redes:[{target:"Switch",text:"Selecciona el switch para preparar la red."},{target:"Router",text:"Identifica el router que comunicará la red."},{action:0,text:"Conecta los dispositivos con «Conectar red»."},{action:1,text:"Envía paquetes y observa cómo viajan los datos."}],
+ robotica:[{target:"Sensor",text:"Localiza el sensor del robot."},{action:1,text:"Activa el sensor para detectar el entorno."},{action:0,text:"Ejecuta la secuencia para poner el robot en movimiento."}],
+ programacion:[{action:0,text:"Agrega una instrucción al programa."},{action:0,text:"Construye la secuencia agregando otra instrucción."},{action:1,text:"Ejecuta el programa y comprueba la secuencia."}],
+ ciberseguridad:[{action:1,text:"Analiza el mensaje y detecta las señales de phishing."},{action:2,text:"Activa el firewall para proteger el sistema."}],
+ ia:[{action:0,text:"Clasifica el ejemplo para que el sistema lo analice."},{action:1,text:"Agrega una muestra de entrenamiento."},{action:2,text:"Observa el proceso de datos, modelo y predicción."}],
+ electronica:[{target:"Batería",text:"Identifica la batería que aporta energía."},{target:"Interruptor",text:"Selecciona el interruptor del circuito."},{action:0,text:"Cierra el circuito y enciende la bombilla."}],
+ arvr:[{target:"Objeto virtual",text:"Selecciona el objeto virtual del laboratorio."},{action:0,text:"Cambia la perspectiva para explorar el espacio."},{action:1,text:"Muestra el objeto y completa la experiencia."}],
+ sistemas:[{target:"Carpeta",text:"Selecciona una carpeta del escritorio."},{target:"Archivo",text:"Localiza un archivo que puedas organizar."},{action:0,text:"Crea una carpeta de demostración."},{action:1,text:"Organiza el escritorio digital."}],
+ impresion:[{target:"Modelo 3D",text:"Identifica el modelo que se va a fabricar."},{action:0,text:"Inicia la impresión 3D."},{action:1,text:"Controla el proceso pausando la impresión."}],
+ datos:[{target:"Procesador",text:"Selecciona el componente que procesa la información."},{target:"Almacenamiento",text:"Ahora identifica dónde se conservan los archivos."},{action:0,text:"Simula una transferencia de datos."}],
+ evolucion:[{target:"Telégrafo",text:"Encuentra el telégrafo, una tecnología de comunicación antigua."},{target:"Dispositivo móvil",text:"Ahora localiza el dispositivo móvil."},{action:0,text:"Abre la línea de tiempo para comparar la evolución."}]
+};
+let activeMission=null;
+function updateMissionUI(message){
+ const panel=$("#missionHud");if(!panel)return;
+ const steps=activeMission?.steps||[],done=activeMission?.step||0,total=steps.length;
+ $("#missionCount").textContent=activeMission?.complete?"MISIÓN COMPLETADA":`OBJETIVO ${Math.min(done+1,total)} DE ${total}`;
+ $("#missionProgress").style.width=(total?done/total*100:0)+"%";
+ $("#missionTask").textContent=message||(activeMission?.complete?"¡Excelente trabajo! Has completado el desafío.":steps[done]?.text||"Completa las acciones del laboratorio.");
+ $("#missionNext").textContent=activeMission?.complete?"✓ COMPLETADO":"EN CURSO";
+}
+function startChallenge(){
+ if(!current)return;
+ const steps=challengePlans[current.id]||[{target:current.items[0]?.[0],text:"Selecciona un elemento del laboratorio."},{action:0,text:"Prueba una herramienta del laboratorio."}];
+ activeMission={steps,step:0,complete:false};
+ $("#missionHud").classList.remove("hidden");
+ updateMissionUI("¡Misión iniciada! "+steps[0].text);
+ toast("Desafío iniciado. ¡Explora y completa cada objetivo!");
+}
+function missionAdvance(){
+ if(!activeMission||activeMission.complete)return;
+ activeMission.step++;
+ if(activeMission.step>=activeMission.steps.length){
+   activeMission.complete=true;$("#progressBar").style.width="100%";
+   updateMissionUI("¡Misión completada! Has superado todos los objetivos.");toast("🏆 ¡Desafío completado!");
+ }else{
+   $("#progressBar").style.width=(activeMission.step/activeMission.steps.length*100)+"%";
+   updateMissionUI("¡Bien hecho! "+activeMission.steps[activeMission.step].text);toast("Objetivo cumplido. ¡Siguiente misión!");
+ }
+}
+function missionTarget(name){
+ if(!activeMission||activeMission.complete)return;
+ if(activeMission.steps[activeMission.step]?.target===name)missionAdvance();
+}
+function missionAction(index){
+ if(!activeMission||activeMission.complete)return;
+ if(activeMission.steps[activeMission.step]?.action===index)missionAdvance();
+}
+let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null,arSession=null,arOriginalBackground=null,arCameraStream=null,arModeActive=false;
 const world=$("#world");
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600)}
 function showModal(title,body,eyebrow="TECNOLAB XR"){$("#modalTitle").textContent=title;$("#modalBody").innerHTML=body;$("#modalEyebrow").textContent=eyebrow;$("#modal").classList.remove("hidden")}
@@ -206,6 +257,7 @@ function selectObject(g,item){
  selectedEl=g;g.setAttribute("scale","1.12 1.12 1.12");
  const purpose=g.dataset.purpose||objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio.";
  $("#selectedName").textContent=item[0];$("#selectedDescription").textContent=item[1];$("#selectedIcon").textContent=item[2];$("#selectedLabel").textContent="Seleccionado: "+item[0];$("#progressBar").style.width="15%";
+ missionTarget(item[0]);
  $("#infoObjectName").textContent=item[0];$("#infoObjectIcon").textContent=item[2];$("#infoWhat").textContent=item[1];$("#infoPurpose").textContent=purpose;$("#objectInfoTab").classList.remove("hidden");
 }
 function buildActions(){const box=$("#actionButtons");box.innerHTML="";current.actions.forEach((a,i)=>{const b=document.createElement("button");b.textContent=a;b.addEventListener("click",()=>runAction(i));box.appendChild(b)})}
@@ -223,7 +275,7 @@ else if(id==="ia"){toast(["Ejemplo clasificado: dispositivo electrónico (ilustr
 else if(id==="arvr"&&i===2){checkAR();}
 else if(id==="impresion"&&i===0){const obj=world.querySelector(".interactive");obj?.setAttribute("animation__print","property: scale; from: .2 .2 .2; to: 1 1 1; dur: 3000");toast("Impresión demostrativa iniciada.");}
 else{toast("Acción ejecutada: "+current.actions[i]+".");}
-$("#progressBar").style.width=(i===2?"100%":"60%")}
+$("#progressBar").style.width=(i===2?"100%":"60%");missionAction(i)}
 function drawConnections(){const points=[-1.65,0,1.65];for(let i=0;i<2;i++){const line=el("a-cylinder",{position:`${(points[i]+points[i+1])/2} 1.1 0`,radius:".025",height:"1.65",rotation:"0 0 90",color:"#55e6bd"});line.setAttribute("animation","property: material.emissive; from: #003322; to: #55e6bd; dur: 700; dir: alternate; loop: true")}}
 function animatePackets(){for(let i=0;i<5;i++){const p=el("a-sphere",{position:"-1.7 1.15 .1",radius:".07",color:"#55e6bd"});p.setAttribute("animation",`property: position; to: 1.7 1.15 .1; dur: ${1200+i*180}; delay: ${i*180}; loop: true`)}}
 function addProgramBlock(label){const b=el("a-box",{position:`${-1.7+Math.random()*3.4} 1.8 -1`,width:".8",height:".25",depth:".12",color:"#397cbe"});b.classList.add("program-block");el("a-text",{value:label,align:"center",color:"#ffffff",width:"2",position:"0 0 .08"},b);toast("Bloque agregado: "+label)}
@@ -491,4 +543,4 @@ function sceneARExitListener(){
  const scene=$("#xrScene");
  scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
 }
-$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",startChallenge);$("#closeMission").addEventListener("click",()=>$("#missionHud").classList.add("hidden"));$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
