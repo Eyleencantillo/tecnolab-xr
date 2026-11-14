@@ -97,9 +97,6 @@ function createObject(item,i){
  const g=el("a-entity",{position:`${x} 1.05 -.35`,class:"interactive", "data-name":item[0],"data-description":item[1]});
  const hue=["#1c82b8","#3476c9","#278e8b","#765fc2","#bd7c42","#368cae"][i%6];
  const part=(tag,attrs)=>el(tag,attrs,g);
- part("a-box",{position:"0 -.53 0",width:"1.28",height:".09",depth:".98",color:"#d5e4ed",material:"roughness:.34; metalness:.28"});
- part("a-box",{position:"0 -.59 0",width:"1.18",height:".045",depth:".88",color:"#277b9d",material:"roughness:.38; metalness:.35"});
- part("a-torus",{position:"0 -.475 0",rotation:"90 0 0",radius:".57",radiusTubular:".012",color:"#51e5ff",material:"emissive:#1689a9; emissiveIntensity:.28"});
  // Modelos 3D distintos según el contenido del laboratorio.
  if(current.id==="hardware"||current.id==="datos"){
    if(i===0){part("a-box",{width:"1.05",height:".12",depth:".78",color:"#176b55"});for(let n=0;n<4;n++)part("a-box",{position:`${-.36+n*.24} .12 0`,width:".12",height:".12",depth:".48",color:"#d5b45c"});}
@@ -131,12 +128,11 @@ function createObject(item,i){
    part("a-box",{width:".72",height:".55",depth:".45",color:hue});part("a-cylinder",{position:"0 .34 0",radius:".22",height:".08",color:"#51e5ff"});
  }
  part("a-text",{value:item[0],align:"center",color:"#e8f7ff",width:"3.1",position:"0 -.66 0",side:"double"});
- part("a-torus",{radius:".58",radiusTubular:".012",color:"#51e5ff",rotation:"90 0 0",position:"0 -.43 0",opacity:".7"});
  g.addEventListener("click",()=>selectObject(g,item));
  g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.06 1.06 1.06; dur: 180")});
  g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")});
 }
-function selectObject(g,item){if(selectedEl){selectedEl.setAttribute("scale","1 1 1");selectedEl.querySelector("a-torus")?.setAttribute("color","#51e5ff")}selectedEl=g;g.setAttribute("scale","1.12 1.12 1.12");g.querySelector("a-torus")?.setAttribute("color","#ffffff");$("#selectedName").textContent=item[0];$("#selectedDescription").textContent=item[1];$("#selectedIcon").textContent=item[2];$("#selectedLabel").textContent="Seleccionado: "+item[0];$("#progressBar").style.width="15%"}
+function selectObject(g,item){if(selectedEl)selectedEl.setAttribute("scale","1 1 1");selectedEl=g;g.setAttribute("scale","1.12 1.12 1.12");$("#selectedName").textContent=item[0];$("#selectedDescription").textContent=item[1];$("#selectedIcon").textContent=item[2];$("#selectedLabel").textContent="Seleccionado: "+item[0];$("#progressBar").style.width="15%"}
 function buildActions(){const box=$("#actionButtons");box.innerHTML="";current.actions.forEach((a,i)=>{const b=document.createElement("button");b.textContent=a;b.addEventListener("click",()=>runAction(i));box.appendChild(b)})}
 function runAction(i){const id=current.id;if(id==="hardware"&&i===0){world.querySelectorAll("a-torus").forEach((e,j)=>e.setAttribute("color",j<3?"#55e6bd":"#51e5ff"));toast("Conexiones principales resaltadas.");}
 else if(id==="hardware"&&i===1){world.querySelectorAll(".interactive").forEach((e,j)=>e.setAttribute("position",`${(j%3-1)*2.3} ${1+(j%2)*.3} ${Math.floor(j/3)*-1.1}`));toast("Componentes separados para su inspección.");}
