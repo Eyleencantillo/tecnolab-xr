@@ -211,8 +211,8 @@ async function startHands(){
    handLoop=requestAnimationFrame(frame);
    if(video.readyState<2||!handTask||video.currentTime===lastVideoTime)return;
    const now=performance.now();if(now-lastDetect<30)return;lastDetect=now;lastVideoTime=video.currentTime;
-   let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.warn("Error de lectura de manos:",error);return}
-   const raw=result.landmarks||[];
+   let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.error("Error de lectura de manos:",error);status.textContent="ERROR AL LEER LAS MANOS · "+(error.message||"Reinicia el seguimiento.");return}
+   const raw=result.landmarks||result.handLandmarks||[];
    const hands=raw.slice(0,2).map((lm,i)=>{
     const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.65+p.x*.35,y:old[j].y*.65+p.y*.35,z:p.z||0})):lm.map(p=>({...p}));
     smooth[i]=filtered;return filtered;
@@ -244,9 +244,10 @@ async function startHands(){
     status.textContent="MANO DETECTADA · puño: mover · mano abierta: girar · pellizco: acercar · separar dedos: alejar.";
    }
   }
+  status.textContent="CÁMARA Y MODELO LISTOS · muestra una o ambas manos completas.";
   frame();
   $("#handBtn").classList.add("active");$("#handBtn").textContent="✋ Desactivar seguimiento";
-  toast("Seguimiento activo. Consulta la guía de gestos dentro del escenario.");
+  toast("Seguimiento activo. Muestra las manos completas frente a la cámara.");
  }catch(err){
   console.error(err);stopHands();
   toast("No se pudo iniciar el seguimiento. Revisa el permiso de cámara e inténtalo de nuevo.");
