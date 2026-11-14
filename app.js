@@ -248,7 +248,7 @@ async function startHands(){
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
   let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,grabAnchor=null,pinchActive=false,previousPoint=null,twoHandZoomDistance=null;
   const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
-  function center(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5}}
+  function center(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5,z:(lm[0].z+lm[5].z+lm[9].z+lm[13].z+lm[17].z)/5}}
   function classify(lm){
    const wrist=lm[0];
    const palmWidth=Math.max(.001,Math.hypot(lm[5].x-lm[17].x,lm[5].y-lm[17].y));
@@ -308,14 +308,19 @@ async function startHands(){
    if(!target)return false;
    const item=current.items.find(entry=>entry[0]===target.dataset.name);
    if(item)selectObject(target,item);
-   grabAnchor={point:p,position:target.object3D.position.clone()};
+   grabAnchor={point:{x:p.x,y:p.y,z:p.z||0},position:target.object3D.position.clone()};
    return true;
   }
   function dragGrabbed(p){
    if(!selectedEl||!grabAnchor)return;
-   const dx=(grabAnchor.point.x-p.x)*5.2,dy=(grabAnchor.point.y-p.y)*3.8;
+   const dx=(grabAnchor.point.x-p.x)*5.2;
+   const dy=(grabAnchor.point.y-p.y)*3.8;
+   // La profundidad estimada por MediaPipe permite acercar o alejar el modelo.
+   // Acercar la mano a la cámara (z más negativo) desplaza el objeto hacia delante.
+   const dz=((grabAnchor.point.z||0)-(p.z||0))*8.5;
    selectedEl.object3D.position.x=T.MathUtils.clamp(grabAnchor.position.x+dx,-4,4);
-   selectedEl.object3D.position.y=T.MathUtils.clamp(grabAnchor.position.y+dy,.35,3.2);
+   selectedEl.object3D.position.y=T.MathUtils.clamp(grabAnchor.position.y+dy,.72,3.2);
+   selectedEl.object3D.position.z=T.MathUtils.clamp(grabAnchor.position.z+dz,-4,2.5);
    selectedEl.object3D.updateMatrixWorld(true);
   }
   function rotateSelected(p){
@@ -342,7 +347,7 @@ async function startHands(){
    let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.error("Error de lectura de manos:",error);status.textContent="ERROR AL LEER LAS MANOS · "+(error.message||"Reinicia el seguimiento.");return}
    const raw=result.landmarks||result.handLandmarks||[];
    const hands=raw.slice(0,2).map((lm,i)=>{
-    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.65+p.x*.35,y:old[j].y*.65+p.y*.35,z:p.z||0})):lm.map(p=>({...p}));
+    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.65+p.x*.35,y:old[j].y*.65+p.y*.35,z:(old[j].z||0)*.65+(p.z||0)*.35})):lm.map(p=>({...p}));
     smooth[i]=filtered;return filtered;
    });
    draw(hands);
@@ -485,4 +490,4 @@ function sceneARExitListener(){
  const scene=$("#xrScene");
  scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
 }
-$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",()=>showModal("Desafío del laboratorio",`<p>${current?.challenge||""}</p><p>Explora el escenario, prueba las herramientas y utiliza la retroalimentación para completar la experiencia.</p>`,"MISIÓN PRÁCTICA"));$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",closeModal);$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
