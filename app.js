@@ -117,26 +117,35 @@ if(window.AFRAME&&!AFRAME.components["spin-gltf-parts"]){
  });
 }
 function createObject(item,i,parent=world){
- const x=(i-(current.items.length-1)/2)*1.45;
- const g=el("a-entity",{position:x+" 1.12 -.35",class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
+ // Hardware se distribuye en una cuadrícula 3 × 2 para que los modelos no se superpongan.
+ const hardwareLayout=current.id==="hardware";
+ const col=i%3,row=Math.floor(i/3);
+ const x=hardwareLayout?(col-1)*2.55:(i-(current.items.length-1)/2)*1.45;
+ const z=hardwareLayout?-.25-row*2.05:-.35;
+ const g=el("a-entity",{position:x+" 1.12 "+z,class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
  if(current.id==="hardware"){
-  const hardwareModels={
-   "Placa base":{local:"placa-base",remote:"https://grab3d.com/dl/motherboard/motherboard.glb",scale:"2.7 2.7 2.7"},
-   "Procesador":{local:"procesador",remote:"https://grab3d.com/dl/cpu/cpu.glb",scale:"3.2 3.2 3.2"},
-   "Memoria RAM":{local:"memoria-ram",scale:"1 1 1"},
-   "Unidad SSD":{local:"ssd",scale:"1 1 1"},
-   "Tarjeta gráfica":{local:"tarjeta-grafica",remote:"https://grab3d.com/dl/graphics-card/graphics-card.glb",scale:"1.8 1.8 1.8"},
-   "Fuente de poder":{local:"fuente-poder",scale:"1 1 1"}
-  };
-  const asset=hardwareModels[item[0]];
-  if(asset){
-   const localUrl=new URL("./models/hardware/"+asset.local+".gltf",document.baseURI).href;
-   const model=el("a-entity",{"gltf-model":asset.remote||localUrl,"spin-gltf-parts":"prefix: GPU_Fan; speed: 8",scale:asset.scale,animation__turn:"property: rotation; to: 0 360 0; dur: 24000; easing: linear; loop: true",animation__float:"property: position; from: 0 0 0; to: 0 .045 0; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true"},g);
-   model.addEventListener("model-loaded",()=>{model.object3D.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;if(node.material)node.material.needsUpdate=true}})});
+  const hardwareModels={"Placa base":"placa-base","Procesador":"procesador","Memoria RAM":"memoria-ram","Unidad SSD":"ssd","Tarjeta gráfica":"tarjeta-grafica","Fuente de poder":"fuente-poder"};
+  const slug=hardwareModels[item[0]];
+  if(slug){
+   // Se utilizan assets locales para que GitHub Pages y Vercel carguen los mismos modelos.
+   const modelUrl=new URL("./models/hardware/"+slug+".gltf",document.baseURI).href;
+   const model=el("a-entity",{"gltf-model":modelUrl,"spin-gltf-parts":"prefix: GPU_Fan; speed: 8",scale:"1 1 1",animation__turn:"property: rotation; to: 0 360 0; dur: 24000; easing: linear; loop: true",animation__float:"property: position; from: 0 0 0; to: 0 .045 0; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true"},g);
+   model.addEventListener("model-loaded",()=>{
+    const root=model.getObject3D("mesh");
+    if(!root)return;
+    root.updateMatrixWorld(true);
+    const bounds=new AFRAME.THREE.Box3().setFromObject(root);
+    const size=bounds.getSize(new AFRAME.THREE.Vector3());
+    const center=bounds.getCenter(new AFRAME.THREE.Vector3());
+    const maxDimension=Math.max(size.x,size.y,size.z)||1;
+    root.position.sub(center);
+    model.object3D.scale.setScalar(1.48/maxDimension);
+    root.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;if(node.material)node.material.needsUpdate=true}});
+    model.object3D.updateMatrixWorld(true);
+   });
    model.addEventListener("model-error",event=>{
-    console.warn("El modelo externo no pudo cargarse; se utilizará el modelo local.",event);
-    if(asset.remote){model.setAttribute("gltf-model",localUrl);toast("Cargando la versión local del modelo.");}
-    else toast("No se pudo cargar este modelo 3D. Comprueba tu conexión e inténtalo de nuevo.");
+    console.error("No se pudo cargar el modelo local "+slug,event);
+    toast("No se pudo cargar "+item[0]+". Comprueba que los archivos 3D estén publicados.");
    },{once:true});
    return g;
   }
