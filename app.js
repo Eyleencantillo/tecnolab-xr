@@ -98,6 +98,17 @@ function buildScene(){
 function createObject(item,i,parent=world){
  const x=(i-(current.items.length-1)/2)*1.45;
  const g=el("a-entity",{position:x+" 1.12 -.35",class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
+ if(current.id==="hardware"){
+  const hardwareModels={"Placa base":"placa-base","Procesador":"procesador","Memoria RAM":"memoria-ram","Unidad SSD":"ssd","Tarjeta gráfica":"tarjeta-grafica","Fuente de poder":"fuente-poder"};
+  const slug=hardwareModels[item[0]];
+  if(slug){
+   const modelUrl=new URL("./models/hardware/"+slug+".gltf",document.baseURI).href;
+   const model=el("a-entity",{"gltf-model":modelUrl,scale:"1 1 1",animation__turn:"property: rotation; to: 0 360 0; dur: 24000; easing: linear; loop: true",animation__float:"property: position; from: 0 0 0; to: 0 .045 0; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true"},g);
+   model.addEventListener("model-loaded",()=>{model.object3D.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;if(node.material)node.material.needsUpdate=true}})});
+   model.addEventListener("model-error",event=>{console.error("No se pudo cargar el modelo 3D "+slug,event);toast("No se pudo cargar este modelo 3D. Comprueba tu conexión e inténtalo de nuevo.")});
+   return g;
+  }
+ }
  const colors=["#12c8e8","#5378ff","#20d5a0","#b06bff","#ff9b42","#f04f91"];
  const c=colors[i%colors.length];
  const p=(tag,attrs={})=>{
