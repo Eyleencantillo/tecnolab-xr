@@ -12,7 +12,7 @@
     const reloadOnce = () => {
       if (sessionStorage.getItem(reloadKey) === "done") return;
       sessionStorage.setItem(reloadKey, "done");
-      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-6");
+      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-7");
     };
     navigator.serviceWorker.addEventListener("message", event => {
       if (event.data?.type === "TECNOLAB_CLEAR_RELOAD") reloadOnce();
@@ -101,7 +101,7 @@
           <div class="scene-panel">
             <div class="scene-toolbar">
               <span class="scene-label"><i></i> MODELOS 3D</span>
-              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><button id="environmentMoveBtn" class="tool-btn">🌐 Mover entorno</button><div class="ambient-audio-control"><button id="ambientMusicBtn" class="tool-btn" aria-pressed="false" title="Pulsa para iniciar la música ambiental. El navegador requiere un clic del usuario.">♫ Música OFF</button><label for="ambientVolume" title="Volumen de música ambiental">Vol. <input id="ambientVolume" type="range" min="0" max="40" value="20" aria-label="Volumen de música ambiental"><span>20%</span></label></div><button id="handBtn" class="tool-btn">▶ Iniciar simulación</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
+              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><button id="environmentMoveBtn" class="tool-btn">🌐 Mover entorno</button><div class="ambient-audio-control"><button id="ambientMusicBtn" class="tool-btn" aria-pressed="false" title="Pulsa para iniciar la música ambiental. El navegador requiere un clic del usuario.">♫ Música OFF</button><label for="ambientVolume" title="Volumen de música ambiental">Vol. <input id="ambientVolume" type="range" min="0" max="100" value="35" aria-label="Volumen de música ambiental"><span>35%</span></label></div><button id="handBtn" class="tool-btn">▶ Iniciar simulación</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
             </div>
             <div id="sceneWrap">\n              <video id="arCameraVideo" class="ar-camera-video hidden" autoplay playsinline muted aria-label="Vista de cámara para realidad aumentada"></video>
               <a-scene id="xrScene" embedded renderer="antialias: true; colorManagement: true; alpha: true; physicallyCorrectLights: true; shadowMapEnabled: true; shadowMapType: pcfsoft" webxr="referenceSpaceType: local; requiredFeatures: ; optionalFeatures: hit-test, dom-overlay; overlayElement: #sceneWrap" vr-mode-ui="enabled: false" background="transparent: true; color: #08172c">
