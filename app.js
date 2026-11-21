@@ -546,7 +546,8 @@ async function startHands(){
     status.textContent="No detecto manos. Coloca una mano completa frente a la cámara y mejora la iluminación.";const pointer=$("#handPointer");if(pointer)pointer.classList.add("hidden");
     pinchActive=false;grabAnchor=null;setGesture("NONE");smooth=[];return;
    }
-   const p=center(hands[0]),detected=classify(hands[0]);\n    const pointerPoint=detected==="PINCH"?hands[0][8]:p;
+   const p=center(hands[0]),detected=classify(hands[0]);
+    const pointerPoint=detected==="PINCH"?hands[0][8]:p;
    const pointer=$("#handPointer");if(pointer){pointer.style.left=((1-pointerPoint.x)*100)+"%";pointer.style.top=(pointerPoint.y*100)+"%";pointer.classList.remove("hidden");}
    // Dos manos abiertas controlan el zoom del objeto seleccionado.
    if(hands.length>=2&&selectedEl&&classify(hands[0])==="OPEN"&&classify(hands[1])==="OPEN"){
