@@ -12,7 +12,7 @@
     const reloadOnce = () => {
       if (sessionStorage.getItem(reloadKey) === "done") return;
       sessionStorage.setItem(reloadKey, "done");
-      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-8");
+      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-9");
     };
     navigator.serviceWorker.addEventListener("message", event => {
       if (event.data?.type === "TECNOLAB_CLEAR_RELOAD") reloadOnce();
@@ -32,9 +32,9 @@
   </script>
   <title>TECNOLAB XR | Laboratorio interactivo</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=20261121-6">
+  <link rel="stylesheet" href="./styles.css?v=20261121-9">
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
-  <script type="module" src="./app.js?v=20261121-6"></script>
+  <script type="module" src="./app.js?v=20261121-9"></script>
 </head>
 <body>
   <div id="app">
@@ -101,7 +101,7 @@
           <div class="scene-panel">
             <div class="scene-toolbar">
               <span class="scene-label"><i></i> MODELOS 3D</span>
-              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><button id="environmentMoveBtn" class="tool-btn">🌐 Mover entorno</button><div class="ambient-audio-control"><button id="ambientMusicBtn" class="tool-btn" aria-pressed="false" title="Pulsa para iniciar la música ambiental. El navegador requiere un clic del usuario.">♫ Música OFF</button><label for="ambientVolume" title="Volumen de música ambiental">Vol. <input id="ambientVolume" type="range" min="0" max="100" value="35" aria-label="Volumen de música ambiental"><span>35%</span></label></div><button id="handBtn" class="tool-btn">▶ Iniciar simulación</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
+              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><div class="ambient-audio-control"><button id="ambientMusicBtn" class="tool-btn" aria-pressed="false" title="Pulsa para iniciar la música ambiental. El navegador requiere un clic del usuario.">♫ Música OFF</button><label for="ambientVolume" title="Volumen de música ambiental">Vol. <input id="ambientVolume" type="range" min="0" max="100" value="35" aria-label="Volumen de música ambiental"><span>35%</span></label></div><button id="handBtn" class="tool-btn">▶ Iniciar simulación</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
             </div>
             <div id="sceneWrap">\n              <video id="arCameraVideo" class="ar-camera-video hidden" autoplay playsinline muted aria-label="Vista de cámara para realidad aumentada"></video>
               <a-scene id="xrScene" embedded renderer="antialias: true; colorManagement: true; alpha: true; physicallyCorrectLights: true; shadowMapEnabled: true; shadowMapType: pcfsoft" webxr="referenceSpaceType: local; requiredFeatures: ; optionalFeatures: hit-test, dom-overlay; overlayElement: #sceneWrap" vr-mode-ui="enabled: false" background="transparent: true; color: #08172c">
@@ -146,8 +146,8 @@
                 <div id="hgBadge" class="hg-badge hidden"><span>🏆</span><div><b>¡MISIÓN SUPERADA!</b><small>Computador restaurado · +100 XP de bonificación</small></div></div>
                 <button id="hgRetry" class="hg-retry hidden">↻ VOLVER A JUGAR</button>
               </section>
-              <div id="sceneHint" class="scene-hint">Modo objetos: pinza para agarrar modelos. Activa «Mover entorno»: pinza para desplazar el laboratorio, mano abierta para girarlo y dos manos para cambiar su escala.</div>
-              <div class="scene-gesture-guide" aria-label="Guía rápida de gestos"><b>GESTOS</b><span>🤏 Pellizca para agarrar y mover.</span><span>🖐️ Abre la mano para girar.</span><span>🙌 Usa dos manos para ampliar o reducir.</span></div>
+              <div id="sceneHint" class="scene-hint">Una mano: pinza para agarrar y mover un objeto. Dos palmas abiertas: mueve y amplía el entorno. Dos puños: gira todo el laboratorio.</div>
+              <div class="scene-gesture-guide" aria-label="Guía rápida de gestos"><b>GESTOS</b><span>🤏 Una mano: pellizca para mover un objeto.</span><span>👐 Dos palmas abiertas: mueve y amplía el entorno.</span><span>✊✊ Dos puños: gira todo el laboratorio.</span></div>
               <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
             </div>
             <div class="scene-footer"><span>INTERACCIÓN PRINCIPAL: GESTOS CON LAS MANOS</span><span id="selectedLabel">Ningún objeto seleccionado</span></div>
