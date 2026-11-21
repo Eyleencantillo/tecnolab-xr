@@ -28,6 +28,92 @@ const challengePlans={
  evolucion:[{target:"Telégrafo",text:"Encuentra el telégrafo, una tecnología de comunicación antigua."},{target:"Dispositivo móvil",text:"Ahora localiza el dispositivo móvil."},{action:0,text:"Abre la línea de tiempo para comparar la evolución."}]
 };
 let activeMission=null,pendingChallengeStart=false;
+let hardwareGame=null,hardwareGameTimer=null;
+const hardwareParts=["Procesador","Memoria RAM","Unidad SSD"];
+function startHardwareGame(){
+ clearInterval(hardwareGameTimer);
+ hardwareGame={phase:"scan",targetIndex:0,installed:new Set(),xp:0,lives:3,time:150,complete:false};
+ $("#missionHud").classList.add("hidden");
+ $("#hardwareGamePanel").classList.remove("hidden");
+ renderHardwareGame();
+ hardwareGameTimer=setInterval(()=>{
+  if(!hardwareGame||hardwareGame.complete)return;
+  hardwareGame.time--;
+  $("#hgTimer").textContent=formatGameTime(hardwareGame.time);
+  if(hardwareGame.time<=0)endHardwareGame(false);
+ },1000);
+ toast("🚨 ¡Alerta! El computador del laboratorio necesita reparación.");
+}
+function formatGameTime(seconds){return String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
+function renderHardwareGame(){
+ if(!hardwareGame)return;
+ const g=hardwareGame;
+ $("#hgXp").textContent=g.xp+" XP";$("#hgLives").textContent="♥".repeat(g.lives)+"♡".repeat(3-g.lives);
+ $("#hgTimer").textContent=formatGameTime(g.time);
+ $("#hgStage").textContent=g.complete?"MISIÓN COMPLETADA":g.phase==="scan"?"FASE 01 · ESCANEO":g.phase==="install"?"FASE 02 · ENSAMBLAJE":"FASE 03 · ARRANQUE";
+ $("#hgProgress").style.width=(g.complete?100:g.phase==="scan"?g.targetIndex/3*34:g.phase==="install"?34+g.installed.size/3*33:67)+"%";
+ $("#hgInstallArea").classList.toggle("hidden",g.phase!=="install");
+ $("#hgPowerArea").classList.toggle("hidden",g.phase!=="power");
+ $("#hgRetry").classList.toggle("hidden",!g.complete);
+ if(g.complete){
+  $("#hgTarget").textContent="¡SISTEMA RESTAURADO!";$("#hgInstruction").textContent="Reparación completada. El computador vuelve a funcionar.";
+  $("#hgStatus").textContent="MISIÓN SUPERADA";$("#hgStatus").className="hg-status success";return;
+ }
+ if(g.phase==="scan"){
+  $("#hgTarget").textContent=hardwareParts[g.targetIndex];$("#hgInstruction").textContent="Localiza el componente y selecciónalo en el escenario 3D.";
+  $("#hgStatus").textContent="BUSCANDO COMPONENTE";$("#hgStatus").className="hg-status";
+ }else if(g.phase==="install"){
+  $("#hgTarget").textContent="Instala los tres componentes";$("#hgInstruction").textContent="Selecciona una pieza en el escenario y pulsa INSTALAR en su tarjeta.";
+  $("#hgStatus").textContent="ENSAMBLAJE";$("#hgStatus").className="hg-status";
+  $("#hgInstallSlots").innerHTML=hardwareParts.map(name=>{const done=g.installed.has(name);return '<button class="hg-slot '+(done?"done":"")+'" data-install="'+name+'" '+(done?"disabled":"")+'><span>'+(done?"✓":"＋")+'</span><b>'+name+'</b><small>'+(done?"INSTALADO":"INSTALAR")+'</small></button>'}).join("");
+  $("#hgInstallSlots").querySelectorAll("[data-install]").forEach(btn=>btn.addEventListener("click",()=>installHardwarePart(btn.dataset.install)));
+ }else{
+  $("#hgTarget").textContent="Prueba de encendido";$("#hgInstruction").textContent="Todos los componentes están instalados. Inicia el computador para completar la misión.";
+  $("#hgStatus").textContent="LISTO PARA ARRANCAR";$("#hgStatus").className="hg-status success";
+ }
+}
+function loseHardwareLife(message){
+ if(!hardwareGame||hardwareGame.complete)return;
+ hardwareGame.lives=Math.max(0,hardwareGame.lives-1);renderHardwareGame();toast(message||"¡Cuidado! Has perdido una oportunidad.");
+ if(hardwareGame.lives===0)endHardwareGame(false);
+}
+function handleHardwareSelection(name){
+ if(!hardwareGame||hardwareGame.complete)return;
+ if(hardwareGame.phase==="scan"){
+  const expected=hardwareParts[hardwareGame.targetIndex];
+  if(name!==expected){loseHardwareLife("Ese no es el componente solicitado. ¡Inténtalo de nuevo!");return}
+  hardwareGame.xp+=100;hardwareGame.targetIndex++;
+  if(hardwareGame.targetIndex>=hardwareParts.length){hardwareGame.phase="install";toast("¡Escaneo completo! Ahora ensambla las piezas.")}
+  else toast("¡Correcto! +100 XP · Siguiente componente.");
+  renderHardwareGame();
+ }else if(hardwareGame.phase==="install"&&!hardwareGame.installed.has(name)){
+  $("#hgInstruction").textContent=name+" seleccionado. Pulsa INSTALAR en su tarjeta.";toast("Pieza seleccionada: "+name+".");
+ }
+}
+function installHardwarePart(name){
+ if(!hardwareGame||hardwareGame.phase!=="install"||hardwareGame.installed.has(name))return;
+ if(selectedEl?.dataset.name!==name){loseHardwareLife("Selecciona primero "+name+" en el escenario.");return}
+ hardwareGame.installed.add(name);hardwareGame.xp+=150;
+ selectedEl.setAttribute("animation__install","property: scale; from: 1.12 1.12 1.12; to: 1.28 1.28 1.28; dur: 260; dir: alternate");
+ toast("¡"+name+" instalado! +150 XP");
+ if(hardwareGame.installed.size===hardwareParts.length)hardwareGame.phase="power";
+ renderHardwareGame();
+}
+function powerOnHardwareGame(){
+ if(!hardwareGame||hardwareGame.phase!=="power")return;
+ hardwareGame.xp+=250;simulateHardwareBoot();
+ setTimeout(()=>{if(hardwareGame&&!hardwareGame.complete)endHardwareGame(true)},2400);
+}
+function endHardwareGame(won){
+ if(!hardwareGame)return;clearInterval(hardwareGameTimer);hardwareGameTimer=null;
+ if(won){hardwareGame.complete=true;hardwareGame.xp+=100;renderHardwareGame();$("#hgBadge").classList.remove("hidden");toast("🏆 ¡OPERACIÓN COMPLETADA! Has salvado el computador.");return}
+ $("#hgStatus").textContent="MISIÓN FALLIDA";$("#hgStatus").className="hg-status danger";
+ $("#hgTarget").textContent="¡Vuelve a intentarlo!";$("#hgInstruction").textContent="Se agotaron el tiempo o las oportunidades. Reinicia la misión para reparar el equipo.";
+ $("#hgRetry").classList.remove("hidden");$("#hgInstallArea").classList.add("hidden");$("#hgPowerArea").classList.add("hidden");toast("Misión terminada. Puedes intentarlo otra vez.");
+}
+function retryHardwareGame(){$("#hgBadge").classList.add("hidden");$("#hgRetry").classList.add("hidden");startHardwareGame()}
+function stopHardwareGame(){clearInterval(hardwareGameTimer);hardwareGameTimer=null;hardwareGame=null;$("#hardwareGamePanel")?.classList.add("hidden");$("#hgBadge")?.classList.add("hidden")}
+
 function updateMissionUI(message){
  const panel=$("#missionHud");if(!panel)return;
  const steps=activeMission?.steps||[],done=activeMission?.step||0,total=steps.length;
@@ -49,6 +135,7 @@ function startChallenge(){
 }
 function launchChallenge(){
  if(!current)return;
+ if(current.id==="hardware"){startHardwareGame();return}
  const steps=challengePlans[current.id]||[{target:current.items[0]?.[0],text:"Selecciona un elemento del laboratorio."},{action:0,text:"Prueba una herramienta del laboratorio."}];
  pendingChallengeStart=false;
  activeMission={steps,step:0,complete:false};
@@ -69,6 +156,7 @@ function missionAdvance(){
  }
 }
 function missionTarget(name){
+ if(current?.id==="hardware"&&hardwareGame){handleHardwareSelection(name);return}
  if(!activeMission||activeMission.complete)return;
  if(activeMission.steps[activeMission.step]?.target===name)missionAdvance();
 }
@@ -82,8 +170,8 @@ function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show"
 function showModal(title,body,eyebrow="TECNOLAB XR"){$("#modalTitle").textContent=title;$("#modalBody").innerHTML=body;$("#modalEyebrow").textContent=eyebrow;$("#modal").classList.remove("hidden")}
 function closeModal(){$("#modal").classList.add("hidden")}
 function buildCards(){$("#moduleGrid").innerHTML=modules.map((m,i)=>`<button class="module-card" data-module="${m.id}"><span class="module-arrow">↗</span><div class="module-icon">${m.icon}</div><h3>${m.name}</h3><p>${m.short}</p><span class="module-tag">${String(i+1).padStart(2,"0")} / ${m.tag}</span></button>`).join("");document.querySelectorAll("[data-module]").forEach(b=>b.addEventListener("click",()=>openLab(b.dataset.module)))}
-function goHome(){$("#labView").classList.remove("active");$("#homeView").classList.add("active");stopHands();current=null;window.scrollTo({top:0,behavior:"smooth"})}
-function openLab(id){current=modules.find(m=>m.id===id);if(!current)return;activeMission=null;pendingChallengeStart=false;$("#missionHud").classList.add("hidden");$("#modalOk").textContent="Entendido";$("#homeView").classList.remove("active");$("#labView").classList.add("active");$("#labTitle").textContent=current.name;$("#labDescription").textContent=current.description;$("#labEyebrow").textContent="LABORATORIO "+String(modules.indexOf(current)+1).padStart(2,"0");$("#objectiveText").textContent=current.objective;$("#tipText").textContent=current.tip;$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedIcon").textContent=current.icon;$("#selectedLabel").textContent="Ningún objeto seleccionado";$("#objectInfoTab").classList.add("hidden");selectedEl=null;buildScene();buildActions();window.scrollTo({top:0,behavior:"smooth"})}
+function goHome(){stopHardwareGame();$("#labView").classList.remove("active");$("#homeView").classList.add("active");stopHands();current=null;window.scrollTo({top:0,behavior:"smooth"})}
+function openLab(id){stopHardwareGame();current=modules.find(m=>m.id===id);if(!current)return;activeMission=null;pendingChallengeStart=false;$("#missionHud").classList.add("hidden");$("#modalOk").textContent="Entendido";$("#homeView").classList.remove("active");$("#labView").classList.add("active");$("#labTitle").textContent=current.name;$("#labDescription").textContent=current.description;$("#labEyebrow").textContent="LABORATORIO "+String(modules.indexOf(current)+1).padStart(2,"0");$("#objectiveText").textContent=current.objective;$("#tipText").textContent=current.tip;$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedIcon").textContent=current.icon;$("#selectedLabel").textContent="Ningún objeto seleccionado";$("#objectInfoTab").classList.add("hidden");selectedEl=null;buildScene();buildActions();window.scrollTo({top:0,behavior:"smooth"})}
 function el(tag,attrs={},parent=world){const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
 function buildScene(){
  world.innerHTML="";
@@ -401,7 +489,7 @@ function selectObject(g,item){
  $("#infoObjectName").textContent=item[0];$("#infoObjectIcon").textContent=item[2];$("#infoWhat").textContent=item[1];$("#infoPurpose").textContent=purpose;$("#objectInfoTab").classList.remove("hidden");
 }
 function buildActions(){const box=$("#actionButtons");box.innerHTML="";current.actions.forEach((a,i)=>{const b=document.createElement("button");b.textContent=a;b.addEventListener("click",()=>runAction(i));box.appendChild(b)})}
-function runAction(i){const id=current.id;if(id==="hardware"&&i===0){world.querySelectorAll("a-torus").forEach((e,j)=>e.setAttribute("color",j<3?"#55e6bd":"#51e5ff"));toast("Conexiones principales resaltadas.");}
+function runAction(i){const id=current.id;if(id==="hardware"&&hardwareGame){if(i===2&&hardwareGame.phase==="power")powerOnHardwareGame();else toast("Completa primero los objetivos de la misión.");return}if(id==="hardware"&&i===0){world.querySelectorAll("a-torus").forEach((e,j)=>e.setAttribute("color",j<3?"#55e6bd":"#51e5ff"));toast("Conexiones principales resaltadas.");}
 else if(id==="hardware"&&i===1){world.querySelectorAll(".interactive").forEach((e,j)=>e.setAttribute("position",`${(j%3-1)*2.3} ${1+(j%2)*.3} ${Math.floor(j/3)*-1.1}`));toast("Componentes separados para su inspección.");}
 else if(id==="hardware"&&i===2){simulateHardwareBoot();}
 else if(id==="redes"&&i===0){drawConnections();toast("Conexiones virtuales creadas.");}
