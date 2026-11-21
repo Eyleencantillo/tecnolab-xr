@@ -491,3 +491,8 @@ footer{border-top-color:#72cbd62b}
 .ambient-audio-control label span{min-width:22px;color:#bfe7f4;font-size:8px}
 @media(max-width:900px){.scene-toolbar{height:auto;min-height:48px;flex-wrap:wrap;gap:7px;padding:8px 10px}.scene-tools{flex-wrap:wrap;justify-content:flex-end}.ambient-audio-control{gap:3px}.ambient-audio-control input{width:42px}}
 @media(max-width:650px){.scene-tools{justify-content:flex-start}.ambient-audio-control label{font-size:8px}.ambient-audio-control input{width:38px}}
+
+
+/* Vista compacta: elimina el espacio sobrante bajo el escenario en pantallas pequeñas. */
+@media(max-width:1000px){#sceneWrap{height:420px;min-height:420px}}
+@media(max-width:650px){#sceneWrap{height:380px;min-height:380px}}
