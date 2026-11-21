@@ -410,3 +410,20 @@ footer{border-top-color:#72cbd62b}
 @media(prefers-reduced-motion:reduce){
   .hero-float,.hero-core,.hero-cube,.hero-lab-visual .orbit-a,.hero-lab-visual .orbit-b,.hero-hand-chip,.cube-spark{animation:none!important}
 }
+
+
+/* Ajustes de precisión visual e encuadre inicial del simulador. */
+.hand-pointer{
+ width:16px!important;height:16px!important;margin:-8px 0 0 -8px!important;
+ border-width:1.5px!important;box-shadow:0 0 0 3px #55e6bd20,0 0 9px #55e6bd99!important;
+}
+.hand-pointer:before{width:1px!important;height:24px!important;left:6.5px!important;top:-5px!important}
+.hand-pointer:after{height:1px!important;width:24px!important;top:6.5px!important;left:-5px!important}
+.hand-pointer span{width:4px!important;height:4px!important;left:5px!important;top:5px!important}
+#sceneWrap{min-height:470px}
+#xrScene,#xrScene canvas{width:100%!important;height:100%!important}
+#xrScene canvas{display:block}
+@media(max-width:650px){
+ #sceneWrap{height:420px;min-height:420px}
+ .hand-pointer{width:14px!important;height:14px!important;margin:-7px 0 0 -7px!important}
+}
