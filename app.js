@@ -419,7 +419,7 @@ function animatePackets(){for(let i=0;i<5;i++){const p=el("a-sphere",{position:"
 function addProgramBlock(label){const b=el("a-box",{position:`${-1.7+Math.random()*3.4} 1.8 -1`,width:".8",height:".25",depth:".12",color:"#397cbe"});b.classList.add("program-block");el("a-text",{value:label,align:"center",color:"#ffffff",width:"2",position:"0 0 .08"},b);toast("Bloque agregado: "+label)}
 function resetScene(){if(!current)return;$("#objectInfoTab").classList.add("hidden");buildScene();$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedLabel").textContent="Ningún objeto seleccionado";selectedEl=null;toast("Escenario reiniciado.")}
 function manipulate(type){if(!selectedEl){toast("Primero selecciona un objeto del escenario.");return}const rot=selectedEl.getAttribute("rotation"),sc=selectedEl.getAttribute("scale");if(type==="left")selectedEl.setAttribute("rotation",`${rot.x} ${rot.y-20} ${rot.z}`);if(type==="right")selectedEl.setAttribute("rotation",`${rot.x} ${rot.y+20} ${rot.z}`);if(type==="up")selectedEl.setAttribute("scale",`${Math.min(sc.x*1.18,2.8)} ${Math.min(sc.y*1.18,2.8)} ${Math.min(sc.z*1.18,2.8)}`);if(type==="down")selectedEl.setAttribute("scale",`${Math.max(sc.x/1.18,.35)} ${Math.max(sc.y/1.18,.35)} ${Math.max(sc.z/1.18,.35)}`);if(type==="center")selectedEl.setAttribute("position","0 1.1 0")}
-function zoomScene(direction){const camera=$("#xrScene")?.querySelector("[camera]");if(!camera)return;const position=camera.getAttribute("position");position.z=Math.min(11,Math.max(3.2,position.z+(direction>0?-.8:.8)));camera.setAttribute("position",position)}
+function zoomScene(direction){const camera=$("#xrScene")?.querySelector("[camera]");if(!camera)return;const position=camera.getAttribute("position");position.z=Math.min(15.5,Math.max(6.5,position.z+(direction>0?-1:1)));camera.setAttribute("position",position)}
 async function startHands(){
  if(handStream){stopHands();return}
  if(!navigator.mediaDevices?.getUserMedia){toast("Tu navegador no permite acceder a la cámara.");return}
@@ -432,7 +432,7 @@ async function startHands(){
   const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
   const files=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   const modelAssetPath="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
-  const options={baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.45,minHandPresenceConfidence:.45,minTrackingConfidence:.45};
+  const options={baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.58};
   try{handTask=await vision.HandLandmarker.createFromOptions(files,options);}
   catch(gpuError){console.warn("GPU no disponible; se utilizará CPU:",gpuError);handTask=await vision.HandLandmarker.createFromOptions(files,{...options,baseOptions:{modelAssetPath,delegate:"CPU"}});status.textContent="Modo de compatibilidad activado · optimizando seguimiento…";}
   const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene"),T=window.AFRAME?.THREE||window.THREE;
@@ -451,8 +451,8 @@ async function startHands(){
    }).length;
    // Umbrales más amplios para que la pinza se reconozca sin exigir juntar
    // completamente los dedos. Los otros tres dedos deben permanecer doblados.
-   if(pinchRatio<.55)return "PINCH";
-   if(pinchRatio>.78&&otherExtended<=2)return "SPREAD";
+   if(pinchRatio<.43)return "PINCH";
+   if(pinchRatio>.82&&otherExtended<=2)return "SPREAD";
    const extended=[8,12,16,20].filter(tip=>{
     const pip=tip-2;
     return Math.hypot(lm[tip].x-wrist.x,lm[tip].y-wrist.y)>
@@ -474,7 +474,7 @@ async function startHands(){
   }
   function setGesture(next){
    if(next===candidate)candidateFrames++;else{candidate=next;candidateFrames=1}
-   if(candidateFrames>=2&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null}
+   if(candidateFrames>=3&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null}
   }
   const handRaycaster=new T.Raycaster(),handPointer=new T.Vector2();
   function objectUnderHand(p){
@@ -538,7 +538,7 @@ async function startHands(){
    let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.error("Error de lectura de manos:",error);status.textContent="ERROR AL LEER LAS MANOS · "+(error.message||"Reinicia el seguimiento.");return}
    const raw=result.landmarks||result.handLandmarks||[];
    const hands=raw.slice(0,2).map((lm,i)=>{
-    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.4+p.x*.6,y:old[j].y*.4+p.y*.6,z:(old[j].z||0)*.4+(p.z||0)*.6})):lm.map(p=>({...p}));
+    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.32+p.x*.68,y:old[j].y*.32+p.y*.68,z:(old[j].z||0)*.32+(p.z||0)*.68})):lm.map(p=>({...p}));
     smooth[i]=filtered;return filtered;
    });
    draw(hands);
@@ -546,8 +546,8 @@ async function startHands(){
     status.textContent="No detecto manos. Coloca una mano completa frente a la cámara y mejora la iluminación.";const pointer=$("#handPointer");if(pointer)pointer.classList.add("hidden");
     pinchActive=false;grabAnchor=null;setGesture("NONE");smooth=[];return;
    }
-   const p=center(hands[0]),detected=classify(hands[0]);
-   const pointer=$("#handPointer");if(pointer){pointer.style.left=((1-p.x)*100)+"%";pointer.style.top=(p.y*100)+"%";pointer.classList.remove("hidden");}
+   const p=center(hands[0]),detected=classify(hands[0]);\n    const pointerPoint=detected==="PINCH"?hands[0][8]:p;
+   const pointer=$("#handPointer");if(pointer){pointer.style.left=((1-pointerPoint.x)*100)+"%";pointer.style.top=(pointerPoint.y*100)+"%";pointer.classList.remove("hidden");}
    // Dos manos abiertas controlan el zoom del objeto seleccionado.
    if(hands.length>=2&&selectedEl&&classify(hands[0])==="OPEN"&&classify(hands[1])==="OPEN"){
     const a=center(hands[0]),b=center(hands[1]),distance=Math.hypot(a.x-b.x,a.y-b.y);
@@ -565,10 +565,10 @@ async function startHands(){
    if(detected==="PINCH"){
     if(!pinchActive){
      pinchActive=true;previousPoint=null;
-     if(beginGrab(p))status.textContent="OBJETO AGARRADO · desplaza la mano sin separar pulgar e índice.";
+     if(beginGrab(pointerPoint))status.textContent="OBJETO AGARRADO · desplaza la mano sin separar pulgar e índice.";
      else status.textContent="PINZA DETECTADA · apunta directamente a un objeto y junta pulgar e índice para agarrarlo.";
     }else if(selectedEl&&grabAnchor){
-     dragGrabbed(p);status.textContent="AGARRANDO "+selectedEl.dataset.name+" · mueve la mano. Separa los dedos para soltar.";
+     dragGrabbed(pointerPoint);status.textContent="AGARRANDO "+selectedEl.dataset.name+" · mueve la mano. Separa los dedos para soltar.";
     }
    }else{
     if(pinchActive){pinchActive=false;grabAnchor=null;if(selectedEl)status.textContent="OBJETO SOLTADO · "+selectedEl.dataset.name;}
