@@ -120,8 +120,8 @@ function createObject(item,i,parent=world){
  // Hardware se distribuye en una cuadrícula 3 × 2 para que los modelos no se superpongan.
  const hardwareLayout=current.id==="hardware";
  const col=i%3,row=Math.floor(i/3);
- const x=hardwareLayout?(col-1)*4.0:(i-(current.items.length-1)/2)*1.45;
- const z=hardwareLayout?1.25-row*5.0:-.35;
+ const x=hardwareLayout?(col-1)*2.8:(i-(current.items.length-1)/2)*1.45;
+ const z=hardwareLayout?1.35-row*2.8:-.35;
  const g=el("a-entity",{position:x+" 1.12 "+z,class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
  if(current.id==="hardware"){
   const hardwareModels={"Placa base":"placa-base","Procesador":"procesador","Memoria RAM":"memoria-ram","Unidad SSD":"ssd","Tarjeta gráfica":"tarjeta-grafica","Fuente de poder":"fuente-poder"};
@@ -133,13 +133,31 @@ function createObject(item,i,parent=world){
    model.addEventListener("model-loaded",()=>{
     const root=model.getObject3D("mesh");
     if(!root)return;
+    // Calcular los límites en el espacio LOCAL del modelo. setFromObject() devuelve
+    // coordenadas globales; restarlas directamente a root.position desplazaba todos
+    // los modelos hacia el origen y hacía que terminaran apilados.
     root.updateMatrixWorld(true);
-    const bounds=new AFRAME.THREE.Box3().setFromObject(root);
-    const size=bounds.getSize(new AFRAME.THREE.Vector3());
-    const center=bounds.getCenter(new AFRAME.THREE.Vector3());
+    const THREE=AFRAME.THREE;
+    const inverseRoot=new THREE.Matrix4().copy(root.matrixWorld).invert();
+    const bounds=new THREE.Box3();
+    root.traverse(node=>{
+     if(!node.isMesh||!node.geometry)return;
+     if(!node.geometry.boundingBox)node.geometry.computeBoundingBox();
+     if(node.geometry.boundingBox){
+      const localBox=node.geometry.boundingBox.clone()
+       .applyMatrix4(node.matrixWorld)
+       .applyMatrix4(inverseRoot);
+      bounds.union(localBox);
+     }
+    });
+    if(bounds.isEmpty())return;
+    const size=bounds.getSize(new THREE.Vector3());
+    const center=bounds.getCenter(new THREE.Vector3());
     const maxDimension=Math.max(size.x,size.y,size.z)||1;
+    // Centrar únicamente dentro del propio GLTF, sin alterar la posición de su objeto padre.
     root.position.sub(center);
-    model.object3D.scale.setScalar(.92/maxDimension);
+    model.object3D.scale.setScalar(1.22/maxDimension);
+    model.object3D.updateMatrixWorld(true);
     root.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;if(node.material)node.material.needsUpdate=true}});
     model.object3D.updateMatrixWorld(true);
    });
