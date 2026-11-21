@@ -12,7 +12,7 @@
     const reloadOnce = () => {
       if (sessionStorage.getItem(reloadKey) === "done") return;
       sessionStorage.setItem(reloadKey, "done");
-      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-7");
+      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-8");
     };
     navigator.serviceWorker.addEventListener("message", event => {
       if (event.data?.type === "TECNOLAB_CLEAR_RELOAD") reloadOnce();
