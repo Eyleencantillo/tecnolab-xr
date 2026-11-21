@@ -120,8 +120,8 @@ function createObject(item,i,parent=world){
  // Hardware se distribuye en una cuadrícula 3 × 2 para que los modelos no se superpongan.
  const hardwareLayout=current.id==="hardware";
  const col=i%3,row=Math.floor(i/3);
- const x=hardwareLayout?(col-1)*2.55:(i-(current.items.length-1)/2)*1.45;
- const z=hardwareLayout?-.25-row*2.05:-.35;
+ const x=hardwareLayout?(col-1)*3.05:(i-(current.items.length-1)/2)*1.45;
+ const z=hardwareLayout?-.25-row*2.85:-.35;
  const g=el("a-entity",{position:x+" 1.12 "+z,class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
  if(current.id==="hardware"){
   const hardwareModels={"Placa base":"placa-base","Procesador":"procesador","Memoria RAM":"memoria-ram","Unidad SSD":"ssd","Tarjeta gráfica":"tarjeta-grafica","Fuente de poder":"fuente-poder"};
@@ -139,7 +139,7 @@ function createObject(item,i,parent=world){
     const center=bounds.getCenter(new AFRAME.THREE.Vector3());
     const maxDimension=Math.max(size.x,size.y,size.z)||1;
     root.position.sub(center);
-    model.object3D.scale.setScalar(1.48/maxDimension);
+    model.object3D.scale.setScalar(1.3/maxDimension);
     root.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;if(node.material)node.material.needsUpdate=true}});
     model.object3D.updateMatrixWorld(true);
    });
