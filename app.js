@@ -129,7 +129,7 @@ function createObject(item,i,parent=world){
   if(slug){
    // Se utilizan assets locales para que GitHub Pages y Vercel carguen los mismos modelos.
    const modelUrl=new URL("./models/hardware/"+slug+".gltf",document.baseURI).href;
-   const model=el("a-entity",{"gltf-model":modelUrl,"spin-gltf-parts":"prefix: GPU_Fan; speed: 8",scale:"1 1 1",animation__turn:"property: rotation; to: 0 360 0; dur: 24000; easing: linear; loop: true",animation__float:"property: position; from: 0 0 0; to: 0 .045 0; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true"},g);
+   const model=el("a-entity",{"gltf-model":modelUrl,"spin-gltf-parts":"prefix: GPU_Fan; speed: 1.25",scale:"1 1 1"},g);
    model.addEventListener("model-loaded",()=>{
     const root=model.getObject3D("mesh");
     if(!root)return;
