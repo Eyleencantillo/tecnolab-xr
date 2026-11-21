@@ -165,6 +165,7 @@ function missionAction(index){
  if(activeMission.steps[activeMission.step]?.action===index)missionAdvance();
 }
 let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null,arSession=null,arOriginalBackground=null,arCameraStream=null,arModeActive=false;
+let environmentNavigation=false;
 const world=$("#world");
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600)}
 function showModal(title,body,eyebrow="TECNOLAB XR"){$("#modalTitle").textContent=title;$("#modalBody").innerHTML=body;$("#modalEyebrow").textContent=eyebrow;$("#modal").classList.remove("hidden")}
@@ -543,7 +544,7 @@ async function startHands(){
   catch(gpuError){console.warn("GPU no disponible; se utilizará CPU:",gpuError);handTask=await vision.HandLandmarker.createFromOptions(files,{...options,baseOptions:{modelAssetPath,delegate:"CPU"}});status.textContent="Modo de compatibilidad activado · optimizando seguimiento…";}
   const canvas=$("#handCanvas"),ctx=canvas.getContext("2d"),scene=$("#xrScene"),T=window.AFRAME?.THREE||window.THREE;
   await new Promise(resolve=>{if(scene.hasLoaded)resolve();else scene.addEventListener("loaded",resolve,{once:true})});
-  let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,grabAnchor=null,pinchActive=false,previousPoint=null,twoHandZoomDistance=null;
+  let lastVideoTime=-1,lastDetect=0,smooth=[],gesture="",candidate="",candidateFrames=0,grabAnchor=null,pinchActive=false,previousPoint=null,twoHandZoomDistance=null,worldNavAnchor=null;
   const bones=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
   function center(lm){return {x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5,z:(lm[0].z+lm[5].z+lm[9].z+lm[13].z+lm[17].z)/5}}
   function classify(lm){
@@ -650,21 +651,26 @@ async function startHands(){
    draw(hands);
    if(!hands.length){
     status.textContent="No detecto manos. Coloca una mano completa frente a la cámara y mejora la iluminación.";const pointer=$("#handPointer");if(pointer)pointer.classList.add("hidden");
-    pinchActive=false;grabAnchor=null;setGesture("NONE");smooth=[];return;
+    pinchActive=false;grabAnchor=null;worldNavAnchor=null;twoHandZoomDistance=null;setGesture("NONE");smooth=[];return;
    }
    const p=center(hands[0]),detected=classify(hands[0]);
     const pointerPoint=detected==="PINCH"?hands[0][8]:p;
    const pointer=$("#handPointer");if(pointer){pointer.style.left=((1-pointerPoint.x)*100)+"%";pointer.style.top=(pointerPoint.y*100)+"%";pointer.classList.remove("hidden");}
-   // Dos manos abiertas controlan el zoom del objeto seleccionado.
-   if(hands.length>=2&&selectedEl&&classify(hands[0])==="OPEN"&&classify(hands[1])==="OPEN"){
-    const a=center(hands[0]),b=center(hands[1]),distance=Math.hypot(a.x-b.x,a.y-b.y);
+   // Dos manos controlan la escala del laboratorio completo o del objeto seleccionado.
+   if(hands.length>=2&&classify(hands[0])==="OPEN"&&classify(hands[1])==="OPEN"){
+    const p1=center(hands[0]),p2=center(hands[1]),distance=Math.hypot(p1.x-p2.x,p1.y-p2.y);
     if(twoHandZoomDistance&&twoHandZoomDistance>.01){
-     const factor=T.MathUtils.clamp(distance/twoHandZoomDistance,.94,1.06);
-     const obj=selectedEl.object3D,next=T.MathUtils.clamp(obj.scale.x*factor,.35,4);
-     obj.scale.set(next,next,next);obj.updateMatrixWorld(true);
+     const factor=T.MathUtils.clamp(distance/twoHandZoomDistance,.97,1.03);
+     if(environmentNavigation){
+      const next=T.MathUtils.clamp(world.object3D.scale.x*factor,.65,1.8);
+      world.object3D.scale.setScalar(next);world.object3D.updateMatrixWorld(true);
+     }else if(selectedEl){
+      const obj=selectedEl.object3D,next=T.MathUtils.clamp(obj.scale.x*factor,.35,4);
+      obj.scale.set(next,next,next);obj.updateMatrixWorld(true);
+     }
     }
-    twoHandZoomDistance=distance;pinchActive=false;grabAnchor=null;previousPoint=null;
-    status.textContent="ZOOM CON DOS MANOS · sepáralas para ampliar y acércalas para reducir.";
+    twoHandZoomDistance=distance;pinchActive=false;grabAnchor=null;worldNavAnchor=null;previousPoint=null;
+    status.textContent=environmentNavigation?"ENTORNO · separa o acerca las manos para cambiar la escala del laboratorio.":"ZOOM CON DOS MANOS · separa para ampliar y acerca para reducir el objeto.";
     return;
    }
    twoHandZoomDistance=null;
@@ -672,16 +678,34 @@ async function startHands(){
    if(detected==="PINCH"){
     if(!pinchActive){
      pinchActive=true;previousPoint=null;
-     if(beginGrab(pointerPoint))status.textContent="OBJETO AGARRADO · desplaza la mano sin separar pulgar e índice.";
+     if(environmentNavigation){
+      worldNavAnchor={point:{x:pointerPoint.x,y:pointerPoint.y},position:world.object3D.position.clone()};
+      status.textContent="ENTORNO AGARRADO · mueve la mano para desplazar todo el laboratorio.";
+     }else if(beginGrab(pointerPoint))status.textContent="OBJETO AGARRADO · desplaza la mano sin separar pulgar e índice.";
      else status.textContent="PINZA DETECTADA · apunta directamente a un objeto y junta pulgar e índice para agarrarlo.";
+    }else if(environmentNavigation&&worldNavAnchor){
+     const dx=(worldNavAnchor.point.x-pointerPoint.x)*5.5,dy=(pointerPoint.y-worldNavAnchor.point.y)*4.2;
+     world.object3D.position.x=T.MathUtils.clamp(worldNavAnchor.position.x+dx,-5,5);
+     world.object3D.position.y=T.MathUtils.clamp(worldNavAnchor.position.y+dy,-3,3);
+     world.object3D.updateMatrixWorld(true);
     }else if(selectedEl&&grabAnchor){
      dragGrabbed(pointerPoint);status.textContent="AGARRANDO "+selectedEl.dataset.name+" · mueve la mano. Separa los dedos para soltar.";
     }
    }else{
-    if(pinchActive){pinchActive=false;grabAnchor=null;if(selectedEl)status.textContent="OBJETO SOLTADO · "+selectedEl.dataset.name;}
+    if(pinchActive){pinchActive=false;grabAnchor=null;worldNavAnchor=null;if(environmentNavigation)status.textContent="ENTORNO SOLTADO";else if(selectedEl)status.textContent="OBJETO SOLTADO · "+selectedEl.dataset.name;}
     if(detected==="OPEN"){
-     if(selectedEl)rotateSelected(p);else previousPoint=p;
-     status.textContent="MANO ABIERTA · desplázala para girar el objeto seleccionado.";
+     if(environmentNavigation){
+      if(previousPoint){
+       const dx=p.x-previousPoint.x,dy=p.y-previousPoint.y;
+       world.object3D.rotation.y-=dx*3.1;
+       world.object3D.rotation.x=T.MathUtils.clamp(world.object3D.rotation.x+dy*2.1,-.65,.65);
+       world.object3D.updateMatrixWorld(true);
+      }
+      previousPoint=p;status.textContent="ENTORNO · mueve la mano abierta para girar el laboratorio.";
+     }else{
+      if(selectedEl)rotateSelected(p);else previousPoint=p;
+      status.textContent="MANO ABIERTA · desplázala para girar el objeto seleccionado.";
+     }
     }else if(detected==="FIST"){
      previousPoint=null;
      status.textContent=selectedEl?"PUÑO CERRADO · usa la pinza para agarrar y desplazar el objeto.":"PUÑO DETECTADO · apunta con pinza a un objeto para seleccionarlo y agarrarlo.";
@@ -788,4 +812,4 @@ function sceneARExitListener(){
  const scene=$("#xrScene");
  scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
 }
-$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",startChallenge);$("#closeMission").addEventListener("click",()=>$("#missionHud").classList.add("hidden"));$("#hgClose").addEventListener("click",()=>stopHardwareGame());$("#hgRetry").addEventListener("click",retryHardwareGame);$("#hgPowerBtn").addEventListener("click",powerOnHardwareGame);$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",()=>{if(pendingChallengeStart){closeModal();launchChallenge()}else closeModal()});$("#handBtn").addEventListener("click",startHands);$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();// TECNOLAB XR ya no registra service worker: evita versiones antiguas persistentes.
+$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",startChallenge);$("#closeMission").addEventListener("click",()=>$("#missionHud").classList.add("hidden"));$("#hgClose").addEventListener("click",()=>stopHardwareGame());$("#hgRetry").addEventListener("click",retryHardwareGame);$("#hgPowerBtn").addEventListener("click",powerOnHardwareGame);$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",()=>{if(pendingChallengeStart){closeModal();launchChallenge()}else closeModal()});$("#handBtn").addEventListener("click",startHands);$("#environmentMoveBtn").addEventListener("click",()=>{environmentNavigation=!environmentNavigation;const btn=$("#environmentMoveBtn");btn.classList.toggle("active",environmentNavigation);btn.textContent=environmentNavigation?"🌐 Entorno activo":"🌐 Mover entorno";toast(environmentNavigation?"Modo entorno: pinza para desplazar, mano abierta para girar y dos manos para escalar.":"Modo objetos: vuelve a manipular componentes individuales.");});$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();// TECNOLAB XR ya no registra service worker: evita versiones antiguas persistentes.
