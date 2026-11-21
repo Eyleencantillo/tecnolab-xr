@@ -291,7 +291,7 @@ const realModelAssets={
   "standard-servo-40-x-20-x-38-mm-897fcd45","desktop-4-axis-robot-arm-with-gripper-7ce43bd6"
  ],
  programacion:[
-  "laptop-15-6-inch-open-c70532c1","mechanical-keyboard-8503e99e",
+  "laptop-15-6-inch-open-c70532c1","key-grid-mechanical-keyboard-8503e99e",
   "desktop-monitor-24-inch-326dfa17","web-eye-webcam-4d75b262"
  ],
  ciberseguridad:[
@@ -315,12 +315,12 @@ const realModelAssets={
   "mini-compute-mini-pc-b45f65d1","usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d"
  ],
  impresion:[
-  "print-frame-3d-printer-993448af","desktop-3d-printer-993448af",
+  "print-frame-3d-printer-993448af","print-frame-3d-printer-993448af",
   "laptop-15-6-inch-open-c70532c1","mini-compute-mini-pc-b45f65d1"
  ],
  datos:[
   "cpu-with-cooler-6590ab40","ddr5-ram-stick-376e4682",
-  "m-2-ssd-2280-nvme-m-key-80bdd256","mini-compute-mini-pc-b45f65d1"
+  "m-2-2280-ssd-nvme-m-key-80bdd256","mini-compute-mini-pc-b45f65d1"
  ],
  evolucion:[
   "cordless-call-cordless-phone-c029bf53","laptop-15-6-inch-open-c70532c1",
@@ -330,7 +330,6 @@ const realModelAssets={
 function createRealModel(item,i,parent){
  const asset=realModelAssets[current.id]?.[i];
  if(!asset)return false;
- const assetId=asset.slice(asset.lastIndexOf("-")+1);
  const modelUrl="https://www.innerscene.com/api/library/"+asset+"/download";
  const model=el("a-entity",{"gltf-model":modelUrl,scale:"1 1 1"},parent);
  model.addEventListener("model-loaded",()=>{
@@ -365,8 +364,7 @@ function createRealModel(item,i,parent){
  },{once:true});
  model.addEventListener("model-error",event=>{
   console.error("No se pudo cargar el modelo CC0:",asset,event);
-  const label=$("#selectedName");
-  if(label&&selectedEl===model.parentEl)label.textContent=item[0]+" · modelo no disponible";
+  toast("No se pudo cargar el modelo 3D de "+item[0]+". Revisa la conexión e inténtalo de nuevo.");
  },{once:true});
  return true;
 }
