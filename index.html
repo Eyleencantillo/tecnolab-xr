@@ -130,6 +130,21 @@
                 <div class="mission-progress"><i id="missionProgress"></i></div>
                 <small id="missionNext">EN CURSO</small>
               </section>
+              <section id="hardwareGamePanel" class="hardware-game-panel hidden" aria-live="polite">
+                <div class="hg-topline">
+                  <div class="hg-brand"><span class="hg-brand-icon">✦</span><div><small>TECNOLAB XR · MODO AVENTURA</small><b>OPERACIÓN: SALVAR EL COMPUTADOR</b></div></div>
+                  <div class="hg-stats"><span>⚡ <b id="hgXp">0 XP</b></span><span id="hgLives" class="hg-lives">♥♥♥</span><span>◷ <b id="hgTimer">02:30</b></span></div>
+                  <button id="hgClose" class="hg-close" aria-label="Salir del desafío">×</button>
+                </div>
+                <div class="hg-progress-track"><i id="hgProgress"></i></div>
+                <div class="hg-mission-row">
+                  <div class="hg-objective"><small id="hgStage">FASE 01 · ESCANEO</small><div class="hg-status" id="hgStatus">BUSCANDO COMPONENTE</div><h3 id="hgTarget">Procesador</h3><p id="hgInstruction">Localiza el componente y selecciónalo en el escenario 3D.</p></div>
+                  <div id="hgInstallArea" class="hg-install-area hidden"><small>BAHÍA DE ENSAMBLAJE</small><div id="hgInstallSlots" class="hg-install-slots"></div></div>
+                  <div id="hgPowerArea" class="hg-power-area hidden"><div class="hg-power-core">⏻</div><button id="hgPowerBtn" class="hg-power-btn">INICIAR COMPUTADOR</button></div>
+                </div>
+                <div id="hgBadge" class="hg-badge hidden"><span>🏆</span><div><b>¡MISIÓN SUPERADA!</b><small>Computador restaurado · +100 XP de bonificación</small></div></div>
+                <button id="hgRetry" class="hg-retry hidden">↻ VOLVER A JUGAR</button>
+              </section>
               <div id="sceneHint" class="scene-hint">Junta pulgar e índice para agarrar. Mueve arriba/abajo y acerca/aleja la mano para desplazar en 3D. Separa los dedos para soltar.</div>
               <div class="scene-gesture-guide" aria-label="Guía rápida de gestos"><b>GESTOS</b><span>🤏 Pellizca para agarrar y mover.</span><span>🖐️ Abre la mano para girar.</span><span>🙌 Usa dos manos para ampliar o reducir.</span></div>
               <div id="handOverlay" class="hand-overlay hidden"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="handCanvas"></canvas><span id="handStatus">Preparando reconocimiento...</span></div>
