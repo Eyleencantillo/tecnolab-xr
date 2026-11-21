@@ -171,7 +171,8 @@ const ambientChords=[[130.81,196,261.63,329.63],[110,164.81,220,261.63],[87.31,1
 let ambientChordIndex=0;
 function setAmbientVolume(){
  const slider=$("#ambientVolume");
- if(ambientMaster&&slider)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.34,ambientAudio.currentTime,.35);
+ if(slider){const label=slider.parentElement.querySelector("span");if(label)label.textContent=slider.value+"%";}
+ if(ambientMaster&&slider&&ambientAudio)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.34,ambientAudio.currentTime,.35);
 }
 function playAmbientChord(){
  if(!ambientAudio||!ambientOscillators.length)return;
