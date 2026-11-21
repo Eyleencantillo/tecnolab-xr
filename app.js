@@ -748,8 +748,8 @@ async function startHands(){
     return;
    }
    twoHandZoomDistance=null;
-   setGesture(detected);
-   if(detected==="PINCH"){
+   const stableGesture=setGesture(detected);
+   if(stableGesture==="PINCH"){
     if(!pinchActive){
      pinchActive=true;previousPoint=null;
      if(environmentNavigation){
