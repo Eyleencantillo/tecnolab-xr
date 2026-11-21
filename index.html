@@ -12,7 +12,7 @@
     const reloadOnce = () => {
       if (sessionStorage.getItem(reloadKey) === "done") return;
       sessionStorage.setItem(reloadKey, "done");
-      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-5");
+      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-6");
     };
     navigator.serviceWorker.addEventListener("message", event => {
       if (event.data?.type === "TECNOLAB_CLEAR_RELOAD") reloadOnce();
@@ -32,9 +32,9 @@
   </script>
   <title>TECNOLAB XR | Laboratorio interactivo</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=20261121-5">
+  <link rel="stylesheet" href="./styles.css?v=20261121-6">
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
-  <script type="module" src="./app.js?v=20261121-5"></script>
+  <script type="module" src="./app.js?v=20261121-6"></script>
 </head>
 <body>
   <div id="app">
@@ -101,7 +101,7 @@
           <div class="scene-panel">
             <div class="scene-toolbar">
               <span class="scene-label"><i></i> MODELOS 3D</span>
-              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><button id="environmentMoveBtn" class="tool-btn">🌐 Mover entorno</button><div class="ambient-audio-control"><button id="ambientMusicBtn" class="tool-btn" aria-pressed="false">♫ Música OFF</button><label for="ambientVolume" title="Volumen de música ambiental">Vol. <input id="ambientVolume" type="range" min="0" max="30" value="12" aria-label="Volumen de música ambiental"><span>12%</span></label></div><button id="handBtn" class="tool-btn">▶ Iniciar simulación</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
+              <div class="scene-tools"><button id="sceneZoomOut" class="tool-btn" title="Alejar escenario">− Escenario</button><button id="sceneZoomIn" class="tool-btn" title="Acercar escenario">＋ Escenario</button><button id="environmentMoveBtn" class="tool-btn">🌐 Mover entorno</button><div class="ambient-audio-control"><button id="ambientMusicBtn" class="tool-btn" aria-pressed="false" title="Pulsa para iniciar la música ambiental. El navegador requiere un clic del usuario.">♫ Música OFF</button><label for="ambientVolume" title="Volumen de música ambiental">Vol. <input id="ambientVolume" type="range" min="0" max="40" value="20" aria-label="Volumen de música ambiental"><span>20%</span></label></div><button id="handBtn" class="tool-btn">▶ Iniciar simulación</button><button id="arBtn" class="tool-btn">◉ Modo AR</button><button id="fullscreenBtn" class="tool-btn">⛶</button></div>
             </div>
             <div id="sceneWrap">\n              <video id="arCameraVideo" class="ar-camera-video hidden" autoplay playsinline muted aria-label="Vista de cámara para realidad aumentada"></video>
               <a-scene id="xrScene" embedded renderer="antialias: true; colorManagement: true; alpha: true; physicallyCorrectLights: true; shadowMapEnabled: true; shadowMapType: pcfsoft" webxr="referenceSpaceType: local; requiredFeatures: ; optionalFeatures: hit-test, dom-overlay; overlayElement: #sceneWrap" vr-mode-ui="enabled: false" background="transparent: true; color: #08172c">
@@ -127,6 +127,7 @@
                 <div class="mission-kicker">🎮 MODO DESAFÍO</div>
                 <div id="missionCount" class="mission-count">OBJETIVO 1 DE 3</div>
                 <p id="missionTask" class="mission-task">Sigue las instrucciones para completar la misión.</p>
+                 <div class="mission-how"><b>💡 CÓMO HACERLO</b><p id="missionHow">La plataforma te explicará cada acción paso a paso.</p></div>
                 <div class="mission-progress"><i id="missionProgress"></i></div>
                 <small id="missionNext">EN CURSO</small>
               </section>
