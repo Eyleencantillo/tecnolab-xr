@@ -279,59 +279,26 @@ if(window.AFRAME&&!AFRAME.components["spin-gltf-parts"]){
 }
 // Modelos de objetos reales publicados bajo licencia CC0. Los archivos conservan sus materiales PBR.
 const realModelAssets={
- hardware:[
-  "atx-motherboard-7794769f","cpu-with-cooler-6590ab40","ddr5-ram-stick-376e4682",
-  "m-2-ssd-b1fcbab1","graphics-card-mini-itx-single-fan-170-mm-ecada592","atx-power-supply-675d6448"
- ],
- redes:[
-  "wi-fi-router-fb251a04","network-switch-926f8cdf","mini-compute-mini-pc-b45f65d1","laptop-15-6-inch-open-c70532c1"
- ],
- robotica:[
-  "85-x-56-mm-single-board-computer-9b02b167","laser-time-of-flight-distance-sensor-breakout-75b80cbe",
-  "standard-servo-40-x-20-x-38-mm-897fcd45","desktop-4-axis-robot-arm-with-gripper-7ce43bd6"
- ],
- programacion:[
-  "laptop-15-6-inch-open-c70532c1","key-grid-mechanical-keyboard-8503e99e",
-  "desktop-monitor-24-inch-326dfa17","web-eye-webcam-4d75b262"
- ],
- ciberseguridad:[
-  "laptop-15-6-inch-open-c70532c1","wi-fi-router-fb251a04",
-  "6-1-inch-slab-smartphone-c523fe00","usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d"
- ],
- ia:[
-  "usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d","graphics-card-mini-itx-single-fan-170-mm-ecada592",
-  "atx-motherboard-7794769f","desktop-monitor-24-inch-326dfa17"
- ],
- electronica:[
-  "9-v-battery-397ea93c","rp2040-microcontroller-board-castellated-usb-c-ed61a322",
-  "dht11-temperature-and-humidity-sensor-module-f1d233c0","nema-17-stepper-motor-with-mount-4eb49da6"
- ],
- arvr:[
-  "vr-headset-with-controllers-88865e81","8-in-tablet-39a80e1d",
-  "6-1-inch-slab-smartphone-c523fe00","web-eye-webcam-4d75b262"
- ],
- sistemas:[
-  "laptop-15-6-inch-open-c70532c1","desktop-monitor-24-inch-326dfa17",
-  "mini-compute-mini-pc-b45f65d1","usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d"
- ],
- impresion:[
-  "nema-17-stepper-motor-with-mount-4eb49da6","filament-spool-clip-for-1-75-mm-filament-25649e65",
-  "print-frame-3d-printer-993448af","generic-2x4-studded-toy-plate-70b8d40d"
- ],
- datos:[
-  "cpu-with-cooler-6590ab40","ddr5-ram-stick-376e4682",
-  "m-2-2280-nvme-ssd-double-sided-66eda476","mini-compute-mini-pc-b45f65d1"
- ],
- evolucion:[
-  "cordless-call-cordless-phone-c029bf53","laptop-15-6-inch-open-c70532c1",
-  "desktop-monitor-24-inch-326dfa17","6-1-inch-slab-smartphone-c523fe00"
- ]
+ hardware:["circuit_board","classic_laptop","retro_multimeter","gamepad","circuit_board","portable_generator"],
+ redes:["vintage_radio_transceiver","security_camera_01","classic_laptop","modular_electric_cables"],
+ robotica:["industrial_microscope","portable_generator","retro_multimeter","circuit_board"],
+ programacion:["classic_laptop","gamepad","television_02","vintage_video_camera"],
+ ciberseguridad:["classic_laptop","security_camera_01","vintage_radio_transceiver","gamepad"],
+ ia:["circuit_board","classic_laptop","retro_multimeter","television_02"],
+ electronica:["retro_multimeter","circuit_board","modular_electric_cables","portable_generator"],
+ arvr:["gamepad","classic_laptop","television_02","vintage_video_camera"],
+ sistemas:["classic_laptop","television_02","portable_generator","circuit_board"],
+ impresion:["portable_generator","industrial_microscope","modular_electric_cables","circuit_board"],
+ datos:["circuit_board","retro_multimeter","classic_laptop","television_02"],
+ evolucion:["vintage_radio_transceiver","classic_laptop","television_02","gamepad"]
 };
+const polyhavenManifestPromise=fetch(new URL("./models/polyhaven/manifest.json",document.baseURI))
+ .then(response=>response.ok?response.json():{})
+ .catch(()=>({}));
 function createRealModel(item,i,parent,onFailure){
  const asset=realModelAssets[current.id]?.[i];
  if(!asset)return false;
- const modelUrl="https://www.innerscene.com/api/library/"+asset+"/download";
- const model=el("a-entity",{"gltf-model":modelUrl,scale:"1 1 1"},parent);
+ const model=el("a-entity",{},parent);
  let settled=false;
  const fallback=()=>{
   if(settled)return;
@@ -341,7 +308,7 @@ function createRealModel(item,i,parent,onFailure){
   model.remove();
   if(parent.isConnected&&typeof onFailure==="function")onFailure();
  };
- const loadTimeout=setTimeout(fallback,15000);
+ const loadTimeout=setTimeout(fallback,20000);
  model.addEventListener("model-loaded",()=>{
   if(settled)return;
   settled=true;
@@ -368,7 +335,8 @@ function createRealModel(item,i,parent,onFailure){
   model.object3D.scale.setScalar(1.16/maxDimension);
   model.object3D.updateMatrixWorld(true);
   root.traverse(node=>{
-   if(node.isMesh){node.castShadow=true;node.receiveShadow=true;
+   if(node.isMesh){
+    node.castShadow=true;node.receiveShadow=true;
     const mats=Array.isArray(node.material)?node.material:[node.material];
     mats.forEach(mat=>{if(mat){mat.needsUpdate=true;if("roughness" in mat&&mat.roughness===undefined)mat.roughness=.72}});
    }
@@ -376,9 +344,16 @@ function createRealModel(item,i,parent,onFailure){
   model.object3D.updateMatrixWorld(true);
  },{once:true});
  model.addEventListener("model-error",event=>{
-  console.error("No se pudo cargar el modelo CC0:",asset,event);
+  console.error("No se pudo cargar el modelo CC0 local:",asset,event);
   fallback();
  },{once:true});
+ polyhavenManifestPromise.then(manifest=>{
+  if(settled)return;
+  const entry=manifest?.[asset];
+  if(!entry?.file){fallback();return;}
+  const url=new URL("./models/polyhaven/"+asset+"/"+entry.file,document.baseURI).href;
+  model.setAttribute("gltf-model",url);
+ }).catch(fallback);
  return true;
 }
 function createObject(item,i,parent=world,skipReal=false){
