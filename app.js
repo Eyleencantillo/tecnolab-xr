@@ -188,7 +188,7 @@ function missionAction(index){
  if(activeMission.steps[activeMission.step]?.action===index)missionAdvance();
 }
 let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null,arSession=null,arOriginalBackground=null,arCameraStream=null,arModeActive=false;
-let environmentNavigation=true;
+let environmentNavigation=false;
 let ambientAudio=null,ambientMaster=null,ambientOscillators=[],ambientChordTimer=null,ambientMusicOn=false;
 const ambientChords=[[130.81,196,261.63,329.63],[110,164.81,220,261.63],[87.31,130.81,174.61,220],[98,146.83,196,246.94]];
 let ambientChordIndex=0;
