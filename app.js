@@ -327,12 +327,25 @@ const realModelAssets={
   "desktop-monitor-24-inch-326dfa17","6-1-inch-slab-smartphone-c523fe00"
  ]
 };
-function createRealModel(item,i,parent){
+function createRealModel(item,i,parent,onFailure){
  const asset=realModelAssets[current.id]?.[i];
  if(!asset)return false;
  const modelUrl="https://www.innerscene.com/api/library/"+asset+"/download";
  const model=el("a-entity",{"gltf-model":modelUrl,scale:"1 1 1"},parent);
+ let settled=false;
+ const fallback=()=>{
+  if(settled)return;
+  settled=true;
+  clearTimeout(loadTimeout);
+  console.warn("Se activa el modelo de respaldo para:",item[0],asset);
+  model.remove();
+  if(parent.isConnected&&typeof onFailure==="function")onFailure();
+ };
+ const loadTimeout=setTimeout(fallback,9000);
  model.addEventListener("model-loaded",()=>{
+  if(settled)return;
+  settled=true;
+  clearTimeout(loadTimeout);
   const root=model.getObject3D("mesh");
   if(!root)return;
   root.updateMatrixWorld(true);
@@ -364,19 +377,23 @@ function createRealModel(item,i,parent){
  },{once:true});
  model.addEventListener("model-error",event=>{
   console.error("No se pudo cargar el modelo CC0:",asset,event);
-  toast("No se pudo cargar el modelo 3D de "+item[0]+". Revisa la conexión e inténtalo de nuevo.");
+  fallback();
  },{once:true});
  return true;
 }
-function createObject(item,i,parent=world){
+function createObject(item,i,parent=world,skipReal=false){
  // Hardware se distribuye en una cuadrícula 3 × 2 para que los modelos no se superpongan.
  const hardwareLayout=current.id==="hardware";
  const col=i%3,row=Math.floor(i/3);
  const x=hardwareLayout?(col-1)*2.8:(i-(current.items.length-1)/2)*1.45;
  const z=hardwareLayout?1.35-row*2.8:-.35;
  const g=el("a-entity",{position:x+" 1.12 "+z,class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
- // Priorizar modelos CC0 con materiales PBR y escala real. Se conserva la distribución del laboratorio.
- if(createRealModel(item,i,g))return g;
+ // La selección y el cursor funcionan tanto con GLB externos como con el respaldo local.
+ g.addEventListener("click",()=>selectObject(g,item));
+ g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.045 1.045 1.045; dur: 180")});
+ g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")});
+ // Si el catálogo externo falla o tarda demasiado, se recuperan los objetos del laboratorio.
+ if(!skipReal&&createRealModel(item,i,g,()=>createObject(item,i,parent,true)))return g;
  if(current.id==="hardware"){
   const hardwareModels={"Placa base":"placa-base","Procesador":"procesador","Memoria RAM":"memoria-ram","Unidad SSD":"ssd","Tarjeta gráfica":"tarjeta-grafica","Fuente de poder":"fuente-poder"};
   const slug=hardwareModels[item[0]];
@@ -641,9 +658,6 @@ function createObject(item,i,parent=world){
  if(current.id==="sistemas"){if(i===0){seam(0,-.1,.1,.48,.018,.012,"#e6bd61");}if(i===1){for(let n=0;n<3;n++)seam(0,.12-n*.12,.06,.28,.012,.012,"#8da4ba");}}
  if(current.id==="evolucion"){if(i===0){screw(-.2,.12,.21);screw(.2,.12,.21);}if(i===1){for(const x0 of [-.2,0,.2])led(x0,-.05,.18,"#e8d6b3");}if(i===3){led(0,.24,.1,"#55e6bd");}}
  // El nombre se muestra únicamente al seleccionar el objeto, en su panel de información.
- g.addEventListener("click",()=>selectObject(g,item));
- g.addEventListener("mouseenter",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1.045 1.045 1.045; dur: 180")});
- g.addEventListener("mouseleave",()=>{if(g!==selectedEl)g.setAttribute("animation__hover","property: scale; to: 1 1 1; dur: 180")});
 }
 const objectPurposes={"Placa base":"Conectar el procesador, la memoria y las demás piezas para que puedan comunicarse.","Procesador":"Ejecutar instrucciones y coordinar las operaciones del computador.","Memoria RAM":"Mantener disponibles los datos y programas que se están usando en ese momento.","Unidad SSD":"Guardar el sistema, los programas y los archivos incluso cuando el computador está apagado.","Tarjeta gráfica":"Procesar imágenes, videos y gráficos para mostrarlos en la pantalla.","Fuente de poder":"Convertir y distribuir la energía eléctrica que necesitan los componentes.","Router":"Comunicar redes diferentes y dirigir los datos hacia su destino.","Switch":"Unir varios equipos dentro de una misma red local para que compartan información.","Servidor":"Ofrecer archivos, aplicaciones u otros servicios a los dispositivos conectados.","Computador":"Permitir al usuario crear, procesar, almacenar y compartir información.","Controlador":"Interpretar el programa y coordinar las acciones de las partes del robot.","Sensor":"Detectar cambios del entorno y enviar esa información al controlador.","Motor":"Producir el movimiento de las ruedas, articulaciones o mecanismos del robot.","Brazo robótico":"Sujetar, levantar y trasladar objetos con movimientos controlados.","Inicio":"Marcar el punto desde el que comienza una secuencia de instrucciones.","Mover adelante":"Indicar al personaje o robot que avance en la dirección establecida.","Girar":"Cambiar la orientación para continuar el recorrido en otra dirección.","Repetir":"Ejecutar varias veces una o más instrucciones sin escribirlas de nuevo.","Contraseña segura":"Ayudar a proteger cuentas y datos personales frente a accesos no autorizados.","Phishing":"Reconocer intentos de engaño que buscan robar contraseñas o información personal.","Firewall":"Filtrar conexiones y bloquear tráfico que no cumple las reglas de seguridad.","Cifrado":"Proteger datos para que solo puedan leerlos quienes tienen la clave adecuada.","Datos":"Proporcionar ejemplos e información con los que un sistema puede aprender o trabajar.","Modelo":"Analizar entradas y generar una clasificación, respuesta o predicción.","Entrenamiento":"Ajustar el modelo para que aprenda patrones a partir de ejemplos.","Predicción":"Estimar un resultado cuando el modelo recibe información nueva.","Batería":"Entregar la energía que impulsa la corriente eléctrica en el circuito.","Cable":"Unir los componentes y ofrecer un camino para el paso de la corriente.","Interruptor":"Permitir o interrumpir el paso de corriente al abrir o cerrar el circuito.","Bombilla":"Convertir la energía eléctrica en luz.","Objeto virtual":"Servir como elemento digital que se puede observar y manipular en el espacio 3D.","Realidad aumentada":"Mostrar información u objetos digitales integrados con la vista del entorno real.","Realidad virtual":"Sumergir al usuario en un entorno digital que puede explorar.","Seguimiento":"Detectar la posición o el movimiento para actualizar la experiencia digital.","Carpeta":"Organizar archivos y otras carpetas para encontrarlos con facilidad.","Archivo":"Guardar información que puede abrirse, consultarse o modificarse con una aplicación.","Ventana":"Mostrar y permitir trabajar con una aplicación o documento.","Papelera":"Conservar temporalmente elementos eliminados para poder recuperarlos o borrarlos definitivamente.","Extrusor":"Calentar y depositar el filamento siguiendo la forma definida para cada capa.","Filamento":"Aportar el material con el que se construye el objeto impreso.","Plataforma":"Sostener la pieza mientras se va construyendo capa por capa.","Modelo 3D":"Servir como diseño digital que guía la fabricación del objeto.","Memoria":"Mantener temporalmente información que el procesador necesita consultar rápidamente.","Almacenamiento":"Conservar programas y archivos para consultarlos más adelante.","Telégrafo":"Transmitir mensajes a distancia mediante señales codificadas.","Teléfono":"Permitir la comunicación de voz entre personas que están en lugares distintos.","Dispositivo móvil":"Facilitar la comunicación y el acceso a herramientas digitales desde distintos lugares."};
 function selectObject(g,item){
