@@ -12,7 +12,7 @@
     const reloadOnce = () => {
       if (sessionStorage.getItem(reloadKey) === "done") return;
       sessionStorage.setItem(reloadKey, "done");
-      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-4");
+      location.replace(location.href.split("#")[0] + (location.search ? "&" : "?") + "fresh=20261121-5");
     };
     navigator.serviceWorker.addEventListener("message", event => {
       if (event.data?.type === "TECNOLAB_CLEAR_RELOAD") reloadOnce();
@@ -32,9 +32,9 @@
   </script>
   <title>TECNOLAB XR | Laboratorio interactivo</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=20261121-4">
+  <link rel="stylesheet" href="./styles.css?v=20261121-5">
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
-  <script type="module" src="./app.js?v=20261121-4"></script>
+  <script type="module" src="./app.js?v=20261121-5"></script>
 </head>
 <body>
   <div id="app">
