@@ -166,12 +166,60 @@ function missionAction(index){
 }
 let current=null,selectedEl=null,handStream=null,handTask=null,handLoop=null,scaleStart=null,arSession=null,arOriginalBackground=null,arCameraStream=null,arModeActive=false;
 let environmentNavigation=false;
+let ambientAudio=null,ambientMaster=null,ambientOscillators=[],ambientChordTimer=null,ambientMusicOn=false;
+const ambientChords=[[130.81,196,261.63,329.63],[110,164.81,220,261.63],[87.31,130.81,174.61,220],[98,146.83,196,246.94]];
+let ambientChordIndex=0;
+function setAmbientVolume(){
+ const slider=$("#ambientVolume");
+ if(ambientMaster&&slider)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.34,ambientAudio.currentTime,.35);
+}
+function playAmbientChord(){
+ if(!ambientAudio||!ambientOscillators.length)return;
+ const chord=ambientChords[ambientChordIndex%ambientChords.length];
+ ambientOscillators.forEach((osc,i)=>osc.frequency.setTargetAtTime(chord[i],ambientAudio.currentTime,2.2));
+ ambientChordIndex++;
+}
+async function startAmbientMusic(){
+ try{
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx){toast("Este navegador no permite reproducir música ambiental.");return}
+  if(!ambientAudio){
+   ambientAudio=new AudioCtx();
+   ambientMaster=ambientAudio.createGain();
+   const filter=ambientAudio.createBiquadFilter();filter.type="lowpass";filter.frequency.value=720;filter.Q.value=.35;
+   ambientMaster.gain.value=0;
+   filter.connect(ambientMaster);ambientMaster.connect(ambientAudio.destination);
+   [0,1,2,3].forEach((_,i)=>{
+    const osc=ambientAudio.createOscillator(),gain=ambientAudio.createGain();
+    osc.type="sine";osc.frequency.value=ambientChords[0][i];gain.gain.value=[.10,.075,.055,.035][i];
+    osc.connect(gain);gain.connect(filter);osc.start();ambientOscillators.push(osc);
+   });
+  }
+  await ambientAudio.resume();
+  setAmbientVolume();
+  ambientMaster.gain.setTargetAtTime(Number($("#ambientVolume").value)/100*.34,ambientAudio.currentTime,1.1);
+  if(!ambientChordTimer){playAmbientChord();ambientChordTimer=setInterval(playAmbientChord,8500)}
+  ambientMusicOn=true;updateAmbientButton();
+ }catch(error){console.warn("No se pudo iniciar la música ambiental:",error);toast("No se pudo iniciar el audio. Comprueba los permisos del navegador.")}
+}
+function stopAmbientMusic(){
+ if(ambientAudio&&ambientMaster)ambientMaster.gain.setTargetAtTime(0,ambientAudio.currentTime,.45);
+ ambientMusicOn=false;updateAmbientButton();
+}
+function updateAmbientButton(){
+ const btn=$("#ambientMusicBtn");if(!btn)return;
+ btn.classList.toggle("active",ambientMusicOn);
+ btn.textContent=ambientMusicOn?"♫ Música ON":"♫ Música OFF";
+ btn.setAttribute("aria-pressed",String(ambientMusicOn));
+}
+function toggleAmbientMusic(){if(ambientMusicOn)stopAmbientMusic();else startAmbientMusic()}
+
 const world=$("#world");
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600)}
 function showModal(title,body,eyebrow="TECNOLAB XR"){$("#modalTitle").textContent=title;$("#modalBody").innerHTML=body;$("#modalEyebrow").textContent=eyebrow;$("#modal").classList.remove("hidden")}
 function closeModal(){$("#modal").classList.add("hidden")}
 function buildCards(){$("#moduleGrid").innerHTML=modules.map((m,i)=>`<button class="module-card" data-module="${m.id}"><span class="module-arrow">↗</span><div class="module-icon">${m.icon}</div><h3>${m.name}</h3><p>${m.short}</p><span class="module-tag">${String(i+1).padStart(2,"0")} / ${m.tag}</span></button>`).join("");document.querySelectorAll("[data-module]").forEach(b=>b.addEventListener("click",()=>openLab(b.dataset.module)))}
-function goHome(){stopHardwareGame();$("#labView").classList.remove("active");$("#homeView").classList.add("active");stopHands();current=null;window.scrollTo({top:0,behavior:"smooth"})}
+function goHome(){stopAmbientMusic();stopHardwareGame();$("#labView").classList.remove("active");$("#homeView").classList.add("active");stopHands();current=null;window.scrollTo({top:0,behavior:"smooth"})}
 function openLab(id){stopHardwareGame();current=modules.find(m=>m.id===id);if(!current)return;activeMission=null;pendingChallengeStart=false;$("#missionHud").classList.add("hidden");$("#modalOk").textContent="Entendido";$("#homeView").classList.remove("active");$("#labView").classList.add("active");$("#labTitle").textContent=current.name;$("#labDescription").textContent=current.description;$("#labEyebrow").textContent="LABORATORIO "+String(modules.indexOf(current)+1).padStart(2,"0");$("#objectiveText").textContent=current.objective;$("#tipText").textContent=current.tip;$("#progressBar").style.width="0%";$("#selectedName").textContent="Selecciona un objeto";$("#selectedDescription").textContent="Haz clic o toca un objeto del escenario para conocerlo y manipularlo.";$("#selectedIcon").textContent=current.icon;$("#selectedLabel").textContent="Ningún objeto seleccionado";$("#objectInfoTab").classList.add("hidden");selectedEl=null;buildScene();buildActions();window.scrollTo({top:0,behavior:"smooth"})}
 function el(tag,attrs={},parent=world){const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
 function buildScene(){
@@ -812,4 +860,4 @@ function sceneARExitListener(){
  const scene=$("#xrScene");
  scene.addEventListener("exit-vr",()=>{if(arModeActive)restoreARScene()});
 }
-$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",startChallenge);$("#closeMission").addEventListener("click",()=>$("#missionHud").classList.add("hidden"));$("#hgClose").addEventListener("click",()=>stopHardwareGame());$("#hgRetry").addEventListener("click",retryHardwareGame);$("#hgPowerBtn").addEventListener("click",powerOnHardwareGame);$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",()=>{if(pendingChallengeStart){closeModal();launchChallenge()}else closeModal()});$("#handBtn").addEventListener("click",startHands);$("#environmentMoveBtn").addEventListener("click",()=>{environmentNavigation=!environmentNavigation;const btn=$("#environmentMoveBtn");btn.classList.toggle("active",environmentNavigation);btn.textContent=environmentNavigation?"🌐 Entorno activo":"🌐 Mover entorno";toast(environmentNavigation?"Modo entorno: pinza para desplazar, mano abierta para girar y dos manos para escalar.":"Modo objetos: vuelve a manipular componentes individuales.");});$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();// TECNOLAB XR ya no registra service worker: evita versiones antiguas persistentes.
+$("#exploreBtn").addEventListener("click",()=>$("#moduleGrid").scrollIntoView({behavior:"smooth"}));$("#howBtn").addEventListener("click",()=>showModal("Cómo interactuar",`<ul><li><b>Mouse o táctil:</b> selecciona objetos en el escenario.</li><li><b>Agarrar con las manos:</b> apunta directamente a un modelo y junta pulgar e índice.</li><li><b>Mover:</b> mantén la pinza cerrada y desplaza la mano a izquierda/derecha y arriba/abajo.</li><li><b>Profundidad:</b> acerca la mano a la cámara para traer el objeto hacia delante y aléjala para llevarlo hacia atrás.</li><li><b>Soltar:</b> separa pulgar e índice.</li><li><b>Girar:</b> con el objeto seleccionado, mueve la mano abierta.</li><li><b>Controles:</b> también puedes girar, ampliar y reducir desde el panel.</li></ul><p>El reconocimiento requiere permiso de cámara, conexión a internet y HTTPS o localhost.</p>`));$("#helpBtn").addEventListener("click",()=>$("#howBtn").click());$("#backBtn").addEventListener("click",goHome);$("#brandHome").addEventListener("click",e=>{e.preventDefault();goHome()});$("#resetBtn").addEventListener("click",resetScene);$("#rotateLeft").addEventListener("click",()=>manipulate("left"));$("#rotateRight").addEventListener("click",()=>manipulate("right"));$("#scaleUp").addEventListener("click",()=>manipulate("up"));$("#scaleDown").addEventListener("click",()=>manipulate("down"));$("#moveCenter").addEventListener("click",()=>manipulate("center"));$("#sceneZoomIn").addEventListener("click",()=>zoomScene(1));$("#sceneZoomOut").addEventListener("click",()=>zoomScene(-1));$("#sceneWrap").addEventListener("wheel",e=>{e.preventDefault();zoomScene(e.deltaY<0?1:-1)},{passive:false});$("#challengeBtn").addEventListener("click",startChallenge);$("#closeMission").addEventListener("click",()=>$("#missionHud").classList.add("hidden"));$("#hgClose").addEventListener("click",()=>stopHardwareGame());$("#hgRetry").addEventListener("click",retryHardwareGame);$("#hgPowerBtn").addEventListener("click",powerOnHardwareGame);$("#modalClose").addEventListener("click",closeModal);$("#closeObjectInfo").addEventListener("click",()=>$("#objectInfoTab").classList.add("hidden"));$("#modalOk").addEventListener("click",()=>{if(pendingChallengeStart){closeModal();launchChallenge()}else closeModal()});$("#ambientMusicBtn").addEventListener("click",toggleAmbientMusic);$("#ambientVolume").addEventListener("input",setAmbientVolume);$("#handBtn").addEventListener("click",startHands);$("#environmentMoveBtn").addEventListener("click",()=>{environmentNavigation=!environmentNavigation;const btn=$("#environmentMoveBtn");btn.classList.toggle("active",environmentNavigation);btn.textContent=environmentNavigation?"🌐 Entorno activo":"🌐 Mover entorno";toast(environmentNavigation?"Modo entorno: pinza para desplazar, mano abierta para girar y dos manos para escalar.":"Modo objetos: vuelve a manipular componentes individuales.");});$("#arBtn").addEventListener("click",checkAR);$("#fullscreenBtn").addEventListener("click",()=>$("#sceneWrap").requestFullscreen?.());buildCards();// TECNOLAB XR ya no registra service worker: evita versiones antiguas persistentes.
