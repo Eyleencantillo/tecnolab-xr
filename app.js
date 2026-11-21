@@ -296,11 +296,11 @@ const realModelAssets={
  ],
  ciberseguridad:[
   "laptop-15-6-inch-open-c70532c1","wi-fi-router-fb251a04",
-  "usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d","web-eye-webcam-4d75b262"
+  "6-1-inch-slab-smartphone-c523fe00","usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d"
  ],
  ia:[
-  "atx-motherboard-7794769f","graphics-card-mini-itx-single-fan-170-mm-ecada592",
-  "web-eye-webcam-4d75b262","laptop-15-6-inch-open-c70532c1"
+  "usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d","graphics-card-mini-itx-single-fan-170-mm-ecada592",
+  "atx-motherboard-7794769f","desktop-monitor-24-inch-326dfa17"
  ],
  electronica:[
   "9-v-battery-397ea93c","rp2040-microcontroller-board-castellated-usb-c-ed61a322",
@@ -315,12 +315,12 @@ const realModelAssets={
   "mini-compute-mini-pc-b45f65d1","usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d"
  ],
  impresion:[
-  "print-frame-3d-printer-993448af","print-frame-3d-printer-993448af",
-  "laptop-15-6-inch-open-c70532c1","mini-compute-mini-pc-b45f65d1"
+  "nema-17-stepper-motor-with-mount-4eb49da6","filament-spool-clip-for-1-75-mm-filament-25649e65",
+  "print-frame-3d-printer-993448af","generic-2x4-studded-toy-plate-70b8d40d"
  ],
  datos:[
   "cpu-with-cooler-6590ab40","ddr5-ram-stick-376e4682",
-  "m-2-2280-ssd-nvme-m-key-80bdd256","mini-compute-mini-pc-b45f65d1"
+  "m-2-2280-nvme-ssd-double-sided-66eda476","mini-compute-mini-pc-b45f65d1"
  ],
  evolucion:[
   "cordless-call-cordless-phone-c029bf53","laptop-15-6-inch-open-c70532c1",
