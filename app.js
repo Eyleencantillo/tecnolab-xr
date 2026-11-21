@@ -334,11 +334,31 @@ function createRealModel(item,i,parent,onFailure){
   root.position.sub(center);
   model.object3D.scale.setScalar(1.16/maxDimension);
   model.object3D.updateMatrixWorld(true);
+  // Realzar los colores sin perder las texturas fotográficas originales.
+  const colorPalette=["#2586d8","#18aaa6","#e99a35","#d9bd45","#8b70c9","#d56a63","#65a56b"];
+  const assetSeed=asset.split("").reduce((sum,char)=>sum+char.charCodeAt(0),0);
+  let materialIndex=0;
   root.traverse(node=>{
    if(node.isMesh){
     node.castShadow=true;node.receiveShadow=true;
     const mats=Array.isArray(node.material)?node.material:[node.material];
-    mats.forEach(mat=>{if(mat){mat.needsUpdate=true;if("roughness" in mat&&mat.roughness===undefined)mat.roughness=.72}});
+    mats.forEach(mat=>{
+     if(!mat)return;
+     const accent=new THREE.Color(colorPalette[(assetSeed+materialIndex++)%colorPalette.length]);
+     // En superficies sin textura se aplica un matiz moderado para que los
+     // componentes tengan detalles de color sin parecer juguetes.
+     if(mat.color&&!mat.map){
+      mat.color.lerp(accent,0.24);
+     }else if(mat.color&&mat.map){
+      // Las texturas originales se conservan; solo se añade un reflejo cromático tenue.
+      if(mat.emissive){
+       mat.emissive.lerp(accent,0.10);
+       mat.emissiveIntensity=Math.max(mat.emissiveIntensity||0,0.045);
+      }
+     }
+     if("roughness" in mat&&mat.roughness===undefined)mat.roughness=.72;
+     mat.needsUpdate=true;
+    });
    }
   });
   model.object3D.updateMatrixWorld(true);
