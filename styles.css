@@ -496,3 +496,9 @@ footer{border-top-color:#72cbd62b}
 /* Vista compacta: elimina el espacio sobrante bajo el escenario en pantallas pequeñas. */
 @media(max-width:1000px){#sceneWrap{height:420px;min-height:420px}}
 @media(max-width:650px){#sceneWrap{height:380px;min-height:380px}}
+
+/* Instrucciones claras y visibles durante cada desafío. */
+.mission-how{margin-top:9px;padding:9px 11px;border:1px solid #65e6bd55;border-radius:10px;background:linear-gradient(110deg,#123e43aa,#192e4b);text-align:left}
+.mission-how b{display:block;margin-bottom:4px;color:#81edc9;font-size:9px;letter-spacing:1px}
+.mission-how p{margin:0;color:#d4e8f2;font-size:10px;line-height:1.5}
+.briefing-how{display:block;margin-top:6px;padding:7px 9px;border-left:2px solid #65e6bd;background:#65e6bd0d;color:#d5e9f2!important;line-height:1.45}
