@@ -195,7 +195,7 @@ let ambientChordIndex=0;
 function setAmbientVolume(){
  const slider=$("#ambientVolume");
  if(slider){const label=slider.parentElement.querySelector("span");if(label)label.textContent=slider.value+"%";}
- if(ambientMaster&&slider&&ambientAudio)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.72,ambientAudio.currentTime,.35);
+ if(ambientMaster&&slider&&ambientAudio)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.9,ambientAudio.currentTime,.2);
 }
 function playAmbientChord(){
  if(!ambientAudio||!ambientOscillators.length)return;
@@ -215,13 +215,13 @@ async function startAmbientMusic(){
    filter.connect(ambientMaster);ambientMaster.connect(ambientAudio.destination);
    [0,1,2,3].forEach((_,i)=>{
     const osc=ambientAudio.createOscillator(),gain=ambientAudio.createGain();
-    osc.type="sine";osc.frequency.value=ambientChords[0][i];gain.gain.value=[.22,.16,.12,.085][i];
+    osc.type="sine";osc.frequency.value=ambientChords[0][i];gain.gain.value=[.42,.30,.20,.14][i];
     osc.connect(gain);gain.connect(filter);osc.start();ambientOscillators.push(osc);
    });
   }
   await ambientAudio.resume();
   setAmbientVolume();
-  ambientMaster.gain.setTargetAtTime(Number($("#ambientVolume").value)/100*.72,ambientAudio.currentTime,1.1);
+  ambientMaster.gain.setTargetAtTime(Number($("#ambientVolume").value)/100*.9,ambientAudio.currentTime,1.1);
   if(!ambientChordTimer){playAmbientChord();ambientChordTimer=setInterval(playAmbientChord,8500)}
   ambientMusicOn=true;updateAmbientButton();
  }catch(error){console.warn("No se pudo iniciar la música ambiental:",error);toast("No se pudo iniciar el audio. Comprueba los permisos del navegador.")}
@@ -653,7 +653,7 @@ async function startHands(){
   }
   function setGesture(next){
    if(next===candidate)candidateFrames++;else{candidate=next;candidateFrames=1}
-   if(candidateFrames>=3&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null}
+   if(candidateFrames>=4&&gesture!==candidate){gesture=candidate;grabAnchor=null;previousPoint=null} return gesture;
   }
   const handRaycaster=new T.Raycaster(),handPointer=new T.Vector2();
   function objectUnderHand(p){
@@ -683,11 +683,11 @@ async function startHands(){
   }
   function dragGrabbed(p){
    if(!selectedEl||!grabAnchor)return;
-   const dx=(grabAnchor.point.x-p.x)*5.2;
-   const dy=(grabAnchor.point.y-p.y)*3.8;
+   const dx=(grabAnchor.point.x-p.x)*3.8;
+   const dy=(grabAnchor.point.y-p.y)*2.9;
    // La profundidad estimada por MediaPipe permite acercar o alejar el modelo.
    // Acercar la mano a la cámara (z más negativo) desplaza el objeto hacia delante.
-   const dz=((grabAnchor.point.z||0)-(p.z||0))*8.5;
+   const dz=((grabAnchor.point.z||0)-(p.z||0))*5.5;
    selectedEl.object3D.position.x=T.MathUtils.clamp(grabAnchor.position.x+dx,-4,4);
    selectedEl.object3D.position.y=T.MathUtils.clamp(grabAnchor.position.y+dy,.72,3.2);
    selectedEl.object3D.position.z=T.MathUtils.clamp(grabAnchor.position.z+dz,-4,2.5);
@@ -717,7 +717,7 @@ async function startHands(){
    let result;try{result=handTask.detectForVideo(video,now)}catch(error){console.error("Error de lectura de manos:",error);status.textContent="ERROR AL LEER LAS MANOS · "+(error.message||"Reinicia el seguimiento.");return}
    const raw=result.landmarks||result.handLandmarks||[];
    const hands=raw.slice(0,2).map((lm,i)=>{
-    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.32+p.x*.68,y:old[j].y*.32+p.y*.68,z:(old[j].z||0)*.32+(p.z||0)*.68})):lm.map(p=>({...p}));
+    const old=smooth[i],filtered=old?lm.map((p,j)=>({x:old[j].x*.62+p.x*.38,y:old[j].y*.62+p.y*.38,z:(old[j].z||0)*.62+(p.z||0)*.38})):lm.map(p=>({...p}));
     smooth[i]=filtered;return filtered;
    });
    draw(hands);
@@ -726,7 +726,9 @@ async function startHands(){
     pinchActive=false;grabAnchor=null;worldNavAnchor=null;twoHandZoomDistance=null;setGesture("NONE");smooth=[];return;
    }
    const p=center(hands[0]),detected=classify(hands[0]);
-    const pointerPoint=detected==="PINCH"?hands[0][8]:p;
+    const thumb=hands[0][4],indexTip=hands[0][8];
+    const pinchPoint={x:(thumb.x+indexTip.x)/2,y:(thumb.y+indexTip.y)/2,z:((thumb.z||0)+(indexTip.z||0))/2};
+    const pointerPoint=detected==="PINCH"?pinchPoint:p;
    const pointer=$("#handPointer");if(pointer){pointer.style.left=((1-pointerPoint.x)*100)+"%";pointer.style.top=(pointerPoint.y*100)+"%";pointer.classList.remove("hidden");}
    // Dos manos controlan la escala del laboratorio completo o del objeto seleccionado.
    if(hands.length>=2&&classify(hands[0])==="OPEN"&&classify(hands[1])==="OPEN"){
@@ -756,7 +758,7 @@ async function startHands(){
      }else if(beginGrab(pointerPoint))status.textContent="OBJETO AGARRADO · desplaza la mano sin separar pulgar e índice.";
      else status.textContent="PINZA DETECTADA · apunta directamente a un objeto y junta pulgar e índice para agarrarlo.";
     }else if(environmentNavigation&&worldNavAnchor){
-     const dx=(worldNavAnchor.point.x-pointerPoint.x)*5.5,dy=(pointerPoint.y-worldNavAnchor.point.y)*4.2;
+     const dx=(worldNavAnchor.point.x-pointerPoint.x)*3.8,dy=(pointerPoint.y-worldNavAnchor.point.y)*2.8;
      world.object3D.position.x=T.MathUtils.clamp(worldNavAnchor.position.x+dx,-5,5);
      world.object3D.position.y=T.MathUtils.clamp(worldNavAnchor.position.y+dy,-3,3);
      world.object3D.updateMatrixWorld(true);
@@ -765,7 +767,7 @@ async function startHands(){
     }
    }else{
     if(pinchActive){pinchActive=false;grabAnchor=null;worldNavAnchor=null;if(environmentNavigation)status.textContent="ENTORNO SOLTADO";else if(selectedEl)status.textContent="OBJETO SOLTADO · "+selectedEl.dataset.name;}
-    if(detected==="OPEN"){
+    if(stableGesture==="OPEN"){
      if(environmentNavigation){
       if(previousPoint){
        const dx=p.x-previousPoint.x,dy=p.y-previousPoint.y;
@@ -778,10 +780,10 @@ async function startHands(){
       if(selectedEl)rotateSelected(p);else previousPoint=p;
       status.textContent="MANO ABIERTA · desplázala para girar el objeto seleccionado.";
      }
-    }else if(detected==="FIST"){
+    }else if(stableGesture==="FIST"){
      previousPoint=null;
      status.textContent=selectedEl?"PUÑO CERRADO · usa la pinza para agarrar y desplazar el objeto.":"PUÑO DETECTADO · apunta con pinza a un objeto para seleccionarlo y agarrarlo.";
-    }else if(detected==="SPREAD"){
+    }else if(stableGesture==="SPREAD"){
      previousPoint=null;
      status.textContent="SEPARA PULGAR E ÍNDICE · el objeto queda libre.";
     }else{
