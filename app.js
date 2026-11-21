@@ -341,7 +341,7 @@ function createRealModel(item,i,parent,onFailure){
   model.remove();
   if(parent.isConnected&&typeof onFailure==="function")onFailure();
  };
- const loadTimeout=setTimeout(fallback,9000);
+ const loadTimeout=setTimeout(fallback,3200);
  model.addEventListener("model-loaded",()=>{
   if(settled)return;
   settled=true;
