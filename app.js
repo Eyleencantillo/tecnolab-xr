@@ -277,6 +277,99 @@ if(window.AFRAME&&!AFRAME.components["spin-gltf-parts"]){
   remove(){this.el.removeEventListener("model-loaded",this.onLoaded);this.parts=[]}
  });
 }
+// Modelos de objetos reales publicados bajo licencia CC0. Los archivos conservan sus materiales PBR.
+const realModelAssets={
+ hardware:[
+  "atx-motherboard-7794769f","cpu-with-cooler-6590ab40","ddr5-ram-stick-376e4682",
+  "m-2-ssd-b1fcbab1","graphics-card-mini-itx-single-fan-170-mm-ecada592","atx-power-supply-675d6448"
+ ],
+ redes:[
+  "wi-fi-router-fb251a04","network-switch-926f8cdf","mini-compute-mini-pc-b45f65d1","laptop-15-6-inch-open-c70532c1"
+ ],
+ robotica:[
+  "85-x-56-mm-single-board-computer-9b02b167","laser-time-of-flight-distance-sensor-breakout-75b80cbe",
+  "standard-servo-40-x-20-x-38-mm-897fcd45","desktop-4-axis-robot-arm-with-gripper-7ce43bd6"
+ ],
+ programacion:[
+  "laptop-15-6-inch-open-c70532c1","mechanical-keyboard-8503e99e",
+  "desktop-monitor-24-inch-326dfa17","web-eye-webcam-4d75b262"
+ ],
+ ciberseguridad:[
+  "laptop-15-6-inch-open-c70532c1","wi-fi-router-fb251a04",
+  "usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d","web-eye-webcam-4d75b262"
+ ],
+ ia:[
+  "atx-motherboard-7794769f","graphics-card-mini-itx-single-fan-170-mm-ecada592",
+  "web-eye-webcam-4d75b262","laptop-15-6-inch-open-c70532c1"
+ ],
+ electronica:[
+  "9-v-battery-397ea93c","rp2040-microcontroller-board-castellated-usb-c-ed61a322",
+  "dht11-temperature-and-humidity-sensor-module-f1d233c0","nema-17-stepper-motor-with-mount-4eb49da6"
+ ],
+ arvr:[
+  "vr-headset-with-controllers-88865e81","8-in-tablet-39a80e1d",
+  "6-1-inch-slab-smartphone-c523fe00","web-eye-webcam-4d75b262"
+ ],
+ sistemas:[
+  "laptop-15-6-inch-open-c70532c1","desktop-monitor-24-inch-326dfa17",
+  "mini-compute-mini-pc-b45f65d1","usb-flash-drive-circuit-board-with-usb-a-plug-a63afe9d"
+ ],
+ impresion:[
+  "print-frame-3d-printer-993448af","desktop-3d-printer-993448af",
+  "laptop-15-6-inch-open-c70532c1","mini-compute-mini-pc-b45f65d1"
+ ],
+ datos:[
+  "cpu-with-cooler-6590ab40","ddr5-ram-stick-376e4682",
+  "m-2-ssd-2280-nvme-m-key-80bdd256","mini-compute-mini-pc-b45f65d1"
+ ],
+ evolucion:[
+  "cordless-call-cordless-phone-c029bf53","laptop-15-6-inch-open-c70532c1",
+  "desktop-monitor-24-inch-326dfa17","6-1-inch-slab-smartphone-c523fe00"
+ ]
+};
+function createRealModel(item,i,parent){
+ const asset=realModelAssets[current.id]?.[i];
+ if(!asset)return false;
+ const assetId=asset.slice(asset.lastIndexOf("-")+1);
+ const modelUrl="https://www.innerscene.com/api/library/"+asset+"/download";
+ const model=el("a-entity",{"gltf-model":modelUrl,scale:"1 1 1"},parent);
+ model.addEventListener("model-loaded",()=>{
+  const root=model.getObject3D("mesh");
+  if(!root)return;
+  root.updateMatrixWorld(true);
+  const THREE=AFRAME.THREE;
+  const inverseRoot=new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const bounds=new THREE.Box3();
+  root.traverse(node=>{
+   if(!node.isMesh||!node.geometry)return;
+   if(!node.geometry.boundingBox)node.geometry.computeBoundingBox();
+   if(node.geometry.boundingBox){
+    const localBox=node.geometry.boundingBox.clone().applyMatrix4(node.matrixWorld).applyMatrix4(inverseRoot);
+    bounds.union(localBox);
+   }
+  });
+  if(bounds.isEmpty())return;
+  const size=bounds.getSize(new THREE.Vector3());
+  const center=bounds.getCenter(new THREE.Vector3());
+  const maxDimension=Math.max(size.x,size.y,size.z)||1;
+  root.position.sub(center);
+  model.object3D.scale.setScalar(1.16/maxDimension);
+  model.object3D.updateMatrixWorld(true);
+  root.traverse(node=>{
+   if(node.isMesh){node.castShadow=true;node.receiveShadow=true;
+    const mats=Array.isArray(node.material)?node.material:[node.material];
+    mats.forEach(mat=>{if(mat){mat.needsUpdate=true;if("roughness" in mat&&mat.roughness===undefined)mat.roughness=.72}});
+   }
+  });
+  model.object3D.updateMatrixWorld(true);
+ },{once:true});
+ model.addEventListener("model-error",event=>{
+  console.error("No se pudo cargar el modelo CC0:",asset,event);
+  const label=$("#selectedName");
+  if(label&&selectedEl===model.parentEl)label.textContent=item[0]+" · modelo no disponible";
+ },{once:true});
+ return true;
+}
 function createObject(item,i,parent=world){
  // Hardware se distribuye en una cuadrícula 3 × 2 para que los modelos no se superpongan.
  const hardwareLayout=current.id==="hardware";
@@ -284,6 +377,8 @@ function createObject(item,i,parent=world){
  const x=hardwareLayout?(col-1)*2.8:(i-(current.items.length-1)/2)*1.45;
  const z=hardwareLayout?1.35-row*2.8:-.35;
  const g=el("a-entity",{position:x+" 1.12 "+z,class:"interactive","data-name":item[0],"data-description":item[1],"data-purpose":objectPurposes[item[0]]||"Se utiliza para cumplir una función dentro de este laboratorio."},parent);
+ // Priorizar modelos CC0 con materiales PBR y escala real. Se conserva la distribución del laboratorio.
+ if(createRealModel(item,i,g))return g;
  if(current.id==="hardware"){
   const hardwareModels={"Placa base":"placa-base","Procesador":"procesador","Memoria RAM":"memoria-ram","Unidad SSD":"ssd","Tarjeta gráfica":"tarjeta-grafica","Fuente de poder":"fuente-poder"};
   const slug=hardwareModels[item[0]];
