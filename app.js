@@ -119,8 +119,31 @@ function updateMissionUI(message){
  const steps=activeMission?.steps||[],done=activeMission?.step||0,total=steps.length;
  $("#missionCount").textContent=activeMission?.complete?"MISIÓN COMPLETADA":`OBJETIVO ${Math.min(done+1,total)} DE ${total}`;
  $("#missionProgress").style.width=(total?done/total*100:0)+"%";
- $("#missionTask").textContent=message||(activeMission?.complete?"¡Excelente trabajo! Has completado el desafío.":steps[done]?.text||"Completa las acciones del laboratorio.");
+ const step=steps[done];
+ $("#missionTask").textContent=message||(activeMission?.complete?"¡Excelente trabajo! Has completado el desafío.":step?.text||"Completa las acciones del laboratorio.");
+ const how=$("#missionHow");
+ if(how)how.textContent=activeMission?.complete?"¡Lo lograste! Puedes explorar otro laboratorio.":challengeHowTo(step);
  $("#missionNext").textContent=activeMission?.complete?"✓ COMPLETADO":"EN CURSO";
+}
+function challengeHowTo(step){
+ if(!step)return "Sigue la indicación y observa el escenario.";
+ if(step.target)return "CÓMO HACERLO: busca el objeto «"+step.target+"» en el escenario 3D y haz clic o tócalo. Si usas las manos, apunta al objeto y junta el pulgar con el índice para seleccionarlo.";
+ const action=current?.actions?.[step.action]||"la herramienta indicada";
+ const details={
+  hardware:["Pulsa «Mostrar conexiones» en HERRAMIENTAS para resaltar las conexiones principales.","Pulsa «Separar componentes» para distribuir las piezas y poder inspeccionarlas.","Cuando la misión te lo indique, pulsa «Probar encendido»."],
+  redes:["Pulsa «Conectar red» para dibujar las conexiones entre los dispositivos.","Pulsa «Enviar paquetes» para ver señales viajar por la red.","Pulsa «Simular falla» para observar una situación de error."],
+  robotica:["Pulsa «Ejecutar secuencia» para iniciar el movimiento simulado del robot.","Pulsa «Activar sensor» para representar la detección del entorno.","Pulsa «Probar motores» para probar el movimiento."],
+  programacion:["Pulsa «Agregar instrucción» para añadir un bloque al programa.","Pulsa «Ejecutar programa» para ejecutar la secuencia construida.","Pulsa «Limpiar programa» para retirar los bloques y comenzar de nuevo."],
+  ciberseguridad:["Pulsa «Analizar contraseña de ejemplo»; se mostrará una recomendación usando una clave ficticia.","Pulsa «Detectar phishing» para ver señales de alerta de un mensaje sospechoso.","Pulsa «Activar firewall» para representar la protección del sistema."],
+  ia:["Pulsa «Clasificar ejemplo» para ver cómo se asigna una categoría a un dato de demostración.","Pulsa «Agregar muestra» para incorporar un ejemplo al conjunto de datos simulado.","Pulsa «Ver proceso» para observar datos → modelo → predicción."],
+  electronica:["Pulsa «Cerrar interruptor» para completar el circuito y encender la bombilla.","Pulsa «Abrir interruptor» para interrumpir el paso de corriente.","Pulsa «Probar circuito» para observar la bombilla encendida en la simulación."],
+  arvr:["Pulsa «Cambiar perspectiva» para modificar el punto de vista del escenario.","Pulsa «Mostrar objeto» para presentar el objeto virtual.","Pulsa «Comprobar compatibilidad AR» para revisar si el dispositivo permite esa función."],
+  sistemas:["Pulsa «Crear carpeta demo» para añadir una carpeta de ejemplo al escritorio virtual.","Pulsa «Organizar escritorio» para ordenar los elementos de la demostración.","Pulsa «Restablecer escritorio» para volver a la disposición inicial."],
+  impresion:["Pulsa «Iniciar impresión» para observar cómo se construye el modelo en la simulación.","Pulsa «Pausar impresión» para detener temporalmente el proceso.","Pulsa «Reiniciar capas» para volver a comenzar la demostración."],
+  datos:["Pulsa «Simular transferencia» para representar el traslado de información.","Pulsa «Guardar archivo demo» para crear un ejemplo de archivo guardado.","Pulsa «Limpiar transferencia» para retirar la animación."],
+  evolucion:["Pulsa «Ver línea de tiempo» para abrir el recorrido cronológico.","Pulsa «Comparar dispositivos» para observar diferencias entre tecnologías.","Pulsa «Explorar galería» para recorrer los elementos del laboratorio."]
+ };
+ return "CÓMO HACERLO: "+(details[current?.id]?.[step.action]||"En el panel HERRAMIENTAS, busca y pulsa el botón «"+action+"». La plataforma realizará una demostración visual.");
 }
 function startChallenge(){
  if(!current)return;
@@ -128,7 +151,7 @@ function startChallenge(){
  pendingChallengeStart=true;
  const list=steps.map((step,i)=>{
   const requirement=step.target?"Seleccionar: "+step.target:current.actions[step.action]||"Realizar acción";
-  return `<li><span class="briefing-step-number">${i+1}</span><div><b>${step.text}</b><small>${requirement}</small></div></li>`;
+  return `<li><span class="briefing-step-number">${i+1}</span><div><b>${step.text}</b><small>${requirement}</small><small class="briefing-how">${challengeHowTo(step)}</small></div></li>`;
  }).join("");
  showModal(current.id==="hardware"?"🚨 OPERACIÓN: SALVAR EL COMPUTADOR":"Antes de comenzar",`<div class="challenge-briefing"><p class="briefing-intro">${current.id==="hardware"?"¡ALERTA! El computador central dejó de funcionar. Explora el laboratorio, localiza las piezas esenciales, instálalas y consigue que el sistema vuelva a encender.":current.challenge}</p><div class="briefing-meta"><span>🎯 OBJETIVO</span><p>${current.objective}</p></div><h3>RECORRIDO COMPLETO DEL DESAFÍO</h3><ol class="briefing-steps">${list}</ol><p class="briefing-note">Primero puedes leer toda la misión. Al pulsar «Iniciar desafío», el laboratorio te mostrará únicamente el paso actual y te guiará hasta completarlo.</p></div>`,"🎮 BRIEFING DE MISIÓN");
  $("#modalOk").textContent="▶ Iniciar desafío";
@@ -172,7 +195,7 @@ let ambientChordIndex=0;
 function setAmbientVolume(){
  const slider=$("#ambientVolume");
  if(slider){const label=slider.parentElement.querySelector("span");if(label)label.textContent=slider.value+"%";}
- if(ambientMaster&&slider&&ambientAudio)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.34,ambientAudio.currentTime,.35);
+ if(ambientMaster&&slider&&ambientAudio)ambientMaster.gain.setTargetAtTime(Number(slider.value)/100*.72,ambientAudio.currentTime,.35);
 }
 function playAmbientChord(){
  if(!ambientAudio||!ambientOscillators.length)return;
@@ -192,13 +215,13 @@ async function startAmbientMusic(){
    filter.connect(ambientMaster);ambientMaster.connect(ambientAudio.destination);
    [0,1,2,3].forEach((_,i)=>{
     const osc=ambientAudio.createOscillator(),gain=ambientAudio.createGain();
-    osc.type="sine";osc.frequency.value=ambientChords[0][i];gain.gain.value=[.10,.075,.055,.035][i];
+    osc.type="sine";osc.frequency.value=ambientChords[0][i];gain.gain.value=[.22,.16,.12,.085][i];
     osc.connect(gain);gain.connect(filter);osc.start();ambientOscillators.push(osc);
    });
   }
   await ambientAudio.resume();
   setAmbientVolume();
-  ambientMaster.gain.setTargetAtTime(Number($("#ambientVolume").value)/100*.34,ambientAudio.currentTime,1.1);
+  ambientMaster.gain.setTargetAtTime(Number($("#ambientVolume").value)/100*.72,ambientAudio.currentTime,1.1);
   if(!ambientChordTimer){playAmbientChord();ambientChordTimer=setInterval(playAmbientChord,8500)}
   ambientMusicOn=true;updateAmbientButton();
  }catch(error){console.warn("No se pudo iniciar la música ambiental:",error);toast("No se pudo iniciar el audio. Comprueba los permisos del navegador.")}
